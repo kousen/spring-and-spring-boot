@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Visualization</title>
+        <script src="webjars/jquery/3.1.1/jquery.min.js"></script>
+        <!--<script src="geocode_results.js"></script>-->
+        <style>
+            #map {
+                height: 100%;
+            }
+            html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <!--<script type="text/javascript">-->
+            <!--google.charts.load('45', { 'packages': ['map'] });-->
+            <!--google.charts.setOnLoadCallback(drawVisualization);-->
+
+            <!--function drawVisualization() {-->
+                <!--var map = new google.visualization.Map(document.getElementById('map_div'));-->
+                <!--var table = new google.visualization.DataTable();-->
+                <!--table.addColumn('number', 'Lat');-->
+                <!--table.addColumn('number', 'Lng');-->
+                <!--table.addColumn('string', 'Name');-->
+                <!--$(document).ready(function() {-->
+                    <!--$.getJSON('/geo').done(function(data) {-->
+                        <!--table.addRow([data.latitude, data.longitude, data.name]);-->
+                        <!--$('.output').html(data.name);-->
+                        <!--console.log(data.name)-->
+                    <!--});-->
+                <!--});-->
+                <!--map.draw(table, {showTip: true});-->
+            <!--}-->
+        <!--</script>-->
+        <!--<div id="map_div"></div>-->
+        <!--<p>At least we got here</p>-->
+        <!--<div>-->
+            <!--<p class="name"></p>-->
+            <!--<p class="latitude"></p>-->
+            <!--<p class="longitude"></p>-->
+            <!--<p class="output"></p>-->
+        <!--</div>-->
+        <div id="map"></div>
+        <script>
+            var map;
+            var lat;
+            var lng;
+            function initMap() {
+                $.getJSON('/geo').done(function(data) {
+                    lat = data.latitude;
+                    lng = data.longitude;
+                    init();
+                });
+            }
+
+            function init() {
+                console.log("Centering map at (" + lat + "," + lng + ")");
+                var latlng = new google.maps.LatLng(lat, lng);
+                map = new google.maps.Map(document.getElementById('map'), {
+                    zoom: 8,
+                    center: latlng
+                });
+                var marker = new google.maps.Marker({
+                    position: latlng,
+                    map: map
+                });
+            };
+        </script>
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCq57Q_noeS1k8WbOen6geYKqHGOf8lbOQ&callback=initMap"
+        async defer></script>
+    </body>
+</html>

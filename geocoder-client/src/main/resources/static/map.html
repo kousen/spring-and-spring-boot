@@ -1,0 +1,34 @@
+<html>
+<head>
+    <script src="webjars/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfjf9Il5PFGctk1DUwXK83Vdvng5M71cg"></script>
+    <script type="text/javascript">
+        google.charts.load("upcoming", {packages:["map"]});
+        google.charts.setOnLoadCallback(drawChart);
+
+        function drawChart() {
+            var map = new google.visualization.Map(document.getElementById('map_div'));
+            var table = new google.visualization.DataTable();
+            table.addColumn('number', 'Latitude');
+            table.addColumn('number', 'Longitude');
+            table.addColumn('string', 'Name');
+
+            $.getJSON('/all').done(function (data) {
+                $.each(data, function (i, site) {
+                    table.addRow([site.latitude, site.longitude, site.name]);
+                });
+                map.draw(table, {
+                    showTooltip: true,
+                    showInfoWindow: true
+                });
+            });
+        }
+    </script>
+</head>
+
+<body>
+<div id="map_div"></div>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Sample</title>
+        <script src="webjars/jquery/3.1.1/jquery.min.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $('p').animate({
+                    fontSize: '48px'
+                }, "slow");
+            });
+        </script>
+    </head>
+    <body>
+        <p data-th-text="${joke}">Joke</p>
+    </body>
+</html>
