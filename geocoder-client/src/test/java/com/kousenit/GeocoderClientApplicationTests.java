@@ -18,13 +18,13 @@ public class GeocoderClientApplicationTests {
     @Autowired
     private TestRestTemplate restTemplate;
 
-	@Test
-	public void contextLoads() {
-	}
+	  @Test
+	  public void contextLoads() {}
 
     @Test
     public void testRootJsp() {
-        ResponseEntity<String> entity = restTemplate.getForEntity("/", String.class);
+        ResponseEntity<String> entity =
+            restTemplate.getForEntity("/", String.class);
         assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
         System.out.println(entity.getBody());
     }
