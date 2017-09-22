@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
@@ -31,13 +32,12 @@ public class JdbcOfficerDAO implements OfficerDAO {
 
     @Override
     public Officer save(Officer officer) {
+//        SqlParameterSource parameters = new BeanPropertySqlParameterSource(officer);
         SqlParameterSource parameters = new MapSqlParameterSource()
                 .addValue("rank", officer.getRank())
                 .addValue("first_name", officer.getFirst())
                 .addValue("last_name", officer.getLast());
-        Integer newId = (Integer) insertOfficer.executeAndReturnKey(
-                    parameters);
-//                new BeanPropertySqlParameterSource(officer));
+        Integer newId = (Integer) insertOfficer.executeAndReturnKey(parameters);
         officer.setId(newId);
         return officer;
     }
