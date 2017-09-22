@@ -13,6 +13,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import javax.transaction.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -37,13 +38,19 @@ public class JpaOfficerDAOTest {
     }
 
     @Test
-    public void findOne() throws Exception {
+    public void findOneThatExists() throws Exception {
         template.query("select id from officers", (rs, num) -> rs.getInt("id"))
                 .forEach(id -> {
-                    Officer officer = dao.findOne(id);
-                    assertNotNull(officer);
-                    assertEquals(id, officer.getId());
+                    Optional<Officer> officer = dao.findOne(id);
+                    assertTrue(officer.isPresent());
+                    assertEquals(id, officer.get().getId());
                 });
+    }
+
+    @Test
+    public void findOneThatDoesNotExist() throws Exception {
+        Optional<Officer> officer = dao.findOne(999);
+        assertFalse(officer.isPresent());
     }
 
     @Test
@@ -62,7 +69,11 @@ public class JpaOfficerDAOTest {
     @Test
     public void delete() throws Exception {
         template.query("select id from officers", (rs, num) -> rs.getInt("id"))
-                .forEach(id -> dao.delete(dao.findOne(id)));
+                .forEach(id -> {
+                    Optional<Officer> officer = dao.findOne(id);
+                    assertTrue(officer.isPresent());
+                    dao.delete(officer.get());
+                });
         assertEquals(0, dao.count().intValue());
     }
 

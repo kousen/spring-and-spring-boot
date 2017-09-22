@@ -11,6 +11,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -35,10 +36,16 @@ public class JdbcOfficerDAOTest {
     }
 
     @Test
-    public void findOne() throws Exception {
-        Officer officer = dao.findOne(1);
-        assertNotNull(officer);
-        assertEquals(1, officer.getId().intValue());
+    public void findOneThatExists() throws Exception {
+        Optional<Officer> officer = dao.findOne(1);
+        assertTrue(officer.isPresent());
+        assertEquals(1, officer.get().getId().intValue());
+    }
+
+    @Test
+    public void findOneThatDoesNotExist() throws Exception {
+        Optional<Officer> officer = dao.findOne(999);
+        assertFalse(officer.isPresent());
     }
 
     @Test
@@ -57,7 +64,11 @@ public class JdbcOfficerDAOTest {
     @Test
     public void delete() throws Exception {
         IntStream.rangeClosed(1, 5)
-                .forEach(id -> dao.delete(dao.findOne(id)));
+                .forEach(id -> {
+                    Optional<Officer> officer = dao.findOne(id);
+                    assertTrue(officer.isPresent());
+                    dao.delete(officer.get());
+                });
         assertEquals(0, dao.count().longValue());
     }
 

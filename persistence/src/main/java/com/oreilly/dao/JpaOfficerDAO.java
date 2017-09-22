@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.Collection;
+import java.util.Optional;
 
 @Repository @Transactional
 public class JpaOfficerDAO implements OfficerDAO {
@@ -20,8 +21,8 @@ public class JpaOfficerDAO implements OfficerDAO {
     }
 
     @Override
-    public Officer findOne(Integer id) {
-        return entityManager.find(Officer.class, id);
+    public Optional<Officer> findOne(Integer id) {
+        return Optional.ofNullable(entityManager.find(Officer.class, id));
     }
 
     @Override

@@ -3,9 +3,9 @@ package com.oreilly.dao;
 import com.oreilly.entities.Officer;
 import com.oreilly.entities.Rank;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
@@ -13,14 +13,16 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.util.Collection;
+import java.util.Optional;
 
+@SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
 @Repository
 public class JdbcOfficerDAO implements OfficerDAO {
     private JdbcTemplate jdbcTemplate;
     private SimpleJdbcInsert insertOfficer;
 
     @Autowired
-    public JdbcOfficerDAO(DataSource dataSource) {
+    public JdbcOfficerDAO(@Qualifier("dataSource") DataSource dataSource) {
         jdbcTemplate = new JdbcTemplate(dataSource);
         insertOfficer = new SimpleJdbcInsert(dataSource)
                 .withTableName("officers")
@@ -41,11 +43,12 @@ public class JdbcOfficerDAO implements OfficerDAO {
     }
 
     @Override
-    public Officer findOne(Integer id) {
-        return jdbcTemplate.queryForObject(
+    public Optional<Officer> findOne(Integer id) {
+        if (!exists(id)) return Optional.empty();
+        return Optional.of(jdbcTemplate.queryForObject(
                 "SELECT * FROM officers WHERE id=?",
                 mapper,
-                id);
+                id));
     }
 
     private RowMapper<Officer> mapper = (rs, rowNum) -> new Officer(rs.getInt("id"), // Java 8 lambda expression
