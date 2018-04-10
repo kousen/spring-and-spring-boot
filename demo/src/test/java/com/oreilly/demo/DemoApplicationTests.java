@@ -1,4 +1,4 @@
-package com.oreilly;
+package com.oreilly.demo;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -1,4 +1,4 @@
-package com.oreilly.controllers;
+package com.oreilly.demo.controllers;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,27 +10,30 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(HelloController.class)
-public class HelloControllerIntegrationTests {
+public class HelloControllerIntegrationTest {
     @Autowired
     private MockMvc mvc;
 
     @Test
-    public void testHelloWorldWithoutName() throws Exception {
+    public void testHelloWithoutName() throws Exception {
         mvc.perform(get("/hello").accept(MediaType.TEXT_PLAIN))
-                .andExpect(status().isOk())
-                .andExpect(view().name("hello"))
-                .andExpect(model().attribute("name", is("World")));
+           .andExpect(status().isOk())
+           .andExpect(view().name("hello"))
+           .andExpect(model().attribute("user", is("World")));
+
     }
 
     @Test
-    public void testHelloWorldWithName() throws Exception {
+    public void testHelloWithName() throws Exception {
         mvc.perform(get("/hello").param("name", "Dolly").accept(MediaType.TEXT_PLAIN))
-                .andExpect(status().isOk())
-                .andExpect(view().name("hello"))
-                .andExpect(model().attribute("name", is("Dolly")));
+           .andExpect(status().isOk())
+           .andExpect(view().name("hello"))
+           .andExpect(model().attribute("user", is("Dolly")));
     }
 }
