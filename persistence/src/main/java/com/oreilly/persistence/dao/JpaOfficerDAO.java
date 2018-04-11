@@ -1,15 +1,15 @@
-package com.oreilly.dao;
+package com.oreilly.persistence.dao;
 
-import com.oreilly.entities.Officer;
+import com.oreilly.persistence.entities.Officer;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
-@Repository @Transactional
+@SuppressWarnings("JpaQlInspection")
+@Repository
 public class JpaOfficerDAO implements OfficerDAO {
     @PersistenceContext
     private EntityManager entityManager;
@@ -21,20 +21,20 @@ public class JpaOfficerDAO implements OfficerDAO {
     }
 
     @Override
-    public Optional<Officer> findOne(Integer id) {
+    public Optional<Officer> findById(Integer id) {
         return Optional.ofNullable(entityManager.find(Officer.class, id));
     }
 
     @Override
-    public Collection<Officer> findAll() {
+    public List<Officer> findAll() {
         return entityManager.createQuery("select o from Officer o", Officer.class)
-                .getResultList();
+                            .getResultList();
     }
 
     @Override
-    public Long count() {
-        return (Long) entityManager.createQuery("select count(o.id) from Officer o")
-                .getSingleResult();
+    public long count() {
+        return entityManager.createQuery("select count(o.id) from Officer o", Long.class)
+                            .getSingleResult();
     }
 
     @Override
@@ -43,11 +43,11 @@ public class JpaOfficerDAO implements OfficerDAO {
     }
 
     @Override
-    public boolean exists(Integer id) {
+    public boolean existsById(Integer id) {
         Object result = entityManager.createQuery(
                 "SELECT 1 from Officer o where o.id=:id")
-                .setParameter("id", id)
-                .getSingleResult();
+                                     .setParameter("id", id)
+                                     .getSingleResult();
         return result != null;
     }
 }

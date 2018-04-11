@@ -1,30 +1,28 @@
-package com.oreilly.dao;
+package com.oreilly.persistence.dao;
 
-import com.oreilly.entities.Officer;
-import com.oreilly.entities.Rank;
+import com.oreilly.persistence.entities.Officer;
+import com.oreilly.persistence.entities.Rank;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.transaction.Transactional;
-
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 
-@SpringBootTest
+@DataJpaTest
 @RunWith(SpringRunner.class)
 @Transactional
 public class OfficerRepositoryTest {
     @Autowired
-    private OfficerRepository dao;
+    private OfficerRepository repository;
 
     @Autowired
     private JdbcTemplate template;
@@ -32,58 +30,57 @@ public class OfficerRepositoryTest {
     @Test
     public void testSave() throws Exception {
         Officer officer = new Officer(Rank.LIEUTENANT, "Nyota", "Uhuru");
-        assertNull(officer.getId());
-        officer = dao.save(officer);
+        officer = repository.save(officer);
         assertNotNull(officer.getId());
     }
 
     @Test
-    public void findOne() throws Exception {
+    public void findById() throws Exception {
         template.query("select id from officers", (rs, num) -> rs.getInt("id"))
                 .forEach(id -> {
-                    Officer officer = dao.findOne(id);
-                    assertNotNull(officer);
-                    assertEquals(id, officer.getId());
+                    Optional<Officer> officer = repository.findById(id);
+                    assertTrue(officer.isPresent());
+                    assertEquals(id, officer.get().getId());
                 });
     }
 
     @Test
     public void findAll() throws Exception {
-        List<String> dbNames = dao.findAll().stream()
-                .map(Officer::getLast)
-                .collect(Collectors.toList());
+        List<String> dbNames = repository.findAll().stream()
+                                         .map(Officer::getLast)
+                                         .collect(Collectors.toList());
         assertThat(dbNames, containsInAnyOrder("Kirk", "Picard", "Sisko", "Janeway", "Archer"));
     }
 
     @Test
     public void count() throws Exception {
-        assertEquals(5, dao.count());
+        assertEquals(5, repository.count());
     }
 
     @Test
-    public void delete() throws Exception {
+    public void deleteById() throws Exception {
         template.query("select id from officers", (rs, num) -> rs.getInt("id"))
-                .forEach(id -> dao.delete(dao.findOne(id)));
-        assertEquals(0, dao.count());
+                .forEach(id -> repository.deleteById(id));
+        assertEquals(0, repository.count());
     }
 
     @Test
-    public void exists() throws Exception {
+    public void existsById() throws Exception {
         template.query("select id from officers", (rs, num) -> rs.getInt("id"))
                 .forEach(id -> assertTrue(String.format("%d should exist", id),
-                        dao.exists(id)));
+                                          repository.existsById(id)));
     }
 
     @Test
     public void findByRank() throws Exception {
-        dao.findByRank(Rank.CAPTAIN).forEach(captain ->
-                assertEquals(Rank.CAPTAIN, captain.getRank()));
+        repository.findByRank(Rank.CAPTAIN).forEach(captain ->
+                                                            assertEquals(Rank.CAPTAIN, captain.getRank()));
 
     }
 
     @Test
     public void findByLast() throws Exception {
-        List<Officer> kirks = dao.findByLast("Kirk");
+        List<Officer> kirks = repository.findByLast("Kirk");
         assertEquals(1, kirks.size());
         assertEquals("Kirk", kirks.get(0).getLast());
     }
