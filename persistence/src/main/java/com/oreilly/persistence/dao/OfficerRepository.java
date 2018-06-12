@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
 public interface OfficerRepository extends JpaRepository<Officer, Integer> {
     List<Officer> findByRank(@Param("rank") Rank rank);
     List<Officer> findByLast(@Param("last") String last);
