@@ -19,6 +19,7 @@ public class GeocoderService {
     private static final String BASE = "https://maps.googleapis.com/maps/api/geocode/json";
     private RestTemplate restTemplate;
     private Logger logger = LoggerFactory.getLogger(GeocoderService.class);
+    private static final String KEY = "AIzaSyDw_d6dfxDEI7MAvqfGXEIsEMwjC1PWRno";
 
     public GeocoderService(RestTemplateBuilder builder) {
         restTemplate = builder.build();
@@ -37,7 +38,7 @@ public class GeocoderService {
         String encodedAddress = Stream.of(address)
                 .map(this::encodeString)
                 .collect(Collectors.joining(","));
-        String url = String.format("%s?address=%s", BASE, encodedAddress);
+        String url = String.format("%s?address=%s&key=%s", BASE, encodedAddress, KEY);
         Response response = restTemplate.getForObject(url, Response.class);
         Site site = new Site(response.getFormattedAddress(),
                 response.getLocation().getLat(),
