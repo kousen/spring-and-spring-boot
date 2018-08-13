@@ -31,4 +31,13 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-web')
     compile('org.springframework.boot:spring-boot-devtools')
     testCompile('org.springframework.boot:spring-boot-starter-test')
+
+    // Java EE (needed for Java 9+ only)
+    if (JavaVersion.current() > JavaVersion.VERSION_1_8) {
+        implementation 'javax.xml.bind:jaxb-api:2.3.0'
+        implementation 'com.sun.xml.bind:jaxb-core:2.3.0'
+        implementation 'com.sun.xml.bind:jaxb-impl:2.3.0'
+        implementation 'com.sun.activation:javax.activation:1.2.0'
+    }
 }
+
