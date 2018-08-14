@@ -14,7 +14,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.*;
 
 @DataJpaTest
@@ -69,6 +71,14 @@ public class OfficerRepositoryTest {
         template.query("select id from officers", (rs, num) -> rs.getInt("id"))
                 .forEach(id -> assertTrue(String.format("%d should exist", id),
                                           repository.existsById(id)));
+    }
+
+    @Test
+    public void doesNotExist() {
+        List<Integer> ids = template.query("select id from officers",
+                                           (rs, num) -> rs.getInt("id"));
+        assertThat(ids, not(contains(999)));
+        assertFalse(repository.existsById(999));
     }
 
     @Test
