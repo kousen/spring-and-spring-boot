@@ -18,7 +18,7 @@ apply plugin: 'io.spring.dependency-management'
 group = 'com.oreilly'
 version = '0.0.1-SNAPSHOT'
 if (JavaVersion.current() > JavaVersion.VERSION_1_8) {
-    sourceCompatibility = 10
+    sourceCompatibility = 11
 } else {
     sourceCompatibility = 1.8
 }
