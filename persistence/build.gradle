@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        springBootVersion = '2.1.0.RELEASE'
+        springBootVersion = '2.1.2.RELEASE'
     }
     repositories {
         mavenCentral()
@@ -24,7 +24,6 @@ repositories {
     mavenCentral()
 }
 
-
 dependencies {
     compile('org.springframework.boot:spring-boot-starter-data-jpa')
     compile('org.springframework.boot:spring-boot-starter-data-rest')
@@ -33,10 +32,10 @@ dependencies {
     testCompile('org.springframework.boot:spring-boot-starter-test')
 
     // Java EE (needed for Java 9+ only)
-    if (JavaVersion.current() > JavaVersion.VERSION_1_8) {
-        implementation 'javax.xml.bind:jaxb-api:2.3.0'
-        implementation 'com.sun.xml.bind:jaxb-core:2.3.0'
-        implementation 'com.sun.xml.bind:jaxb-impl:2.3.0'
-        implementation 'com.sun.activation:javax.activation:1.2.0'
-    }
+//    if (JavaVersion.current() > JavaVersion.VERSION_1_8) {
+//        implementation 'javax.xml.bind:jaxb-api:2.3.0'
+//        implementation 'com.sun.xml.bind:jaxb-core:2.3.0'
+//        implementation 'com.sun.xml.bind:jaxb-impl:2.3.0'
+//        implementation 'com.sun.activation:javax.activation:1.2.0'
+//    }
 }
