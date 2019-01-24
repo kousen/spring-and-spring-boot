@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        springBootVersion = '1.5.6.RELEASE'
+        springBootVersion = '2.1.2.RELEASE'
     }
     repositories {
         mavenCentral()
@@ -13,31 +13,21 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
 
-jar {
-    baseName = 'demo'
-    version = '0.0.1-SNAPSHOT'
-}
-
-sourceCompatibility = 1.8
+group = 'com.oreilly'
+version = '1.0'
+sourceCompatibility = 11
+targetCompatibility = 11
 
 repositories {
     mavenCentral()
 }
 
-
 dependencies {
-    compile('org.springframework.boot:spring-boot-starter-thymeleaf')
-    compile('org.springframework.boot:spring-boot-starter-web')
-    compile('org.springframework.boot:spring-boot-devtools')
-    testCompile('org.springframework.boot:spring-boot-starter-test')
-
-    // Java EE (needed for Java 9+ only)
-    if (JavaVersion.current() > JavaVersion.VERSION_1_8) {
-        implementation 'javax.xml.bind:jaxb-api:2.3.0'
-        implementation 'com.sun.xml.bind:jaxb-core:2.3.0'
-        implementation 'com.sun.xml.bind:jaxb-impl:2.3.0'
-        implementation 'com.sun.activation:javax.activation:1.2.0'
-    }
+    implementation('org.springframework.boot:spring-boot-starter-thymeleaf')
+    implementation('org.springframework.boot:spring-boot-starter-web')
+    implementation('org.springframework.boot:spring-boot-devtools')
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
 
