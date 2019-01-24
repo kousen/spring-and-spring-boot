@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        springBootVersion = '2.0.1.RELEASE'
+        springBootVersion = '2.1.2.RELEASE'
     }
     repositories {
         mavenCentral()
@@ -16,7 +16,8 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 group = 'com.oreilly'
-version = '0.0.1-SNAPSHOT'
+version = '1.0'
+
 if (JavaVersion.current() > JavaVersion.VERSION_1_8) {
     sourceCompatibility = 11
 } else {
@@ -30,12 +31,4 @@ repositories {
 dependencies {
     implementation('org.springframework.boot:spring-boot-starter-web')
     testImplementation('org.springframework.boot:spring-boot-starter-test')
-
-    // Java EE (needed for Java 9+ only)
-    if (JavaVersion.current() > JavaVersion.VERSION_1_8) {
-        implementation 'javax.xml.bind:jaxb-api:2.3.0'
-        implementation 'com.sun.xml.bind:jaxb-core:2.3.0'
-        implementation 'com.sun.xml.bind:jaxb-impl:2.3.0'
-        implementation 'com.sun.activation:javax.activation:1.2.0'
-    }
 }
