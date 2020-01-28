@@ -2,12 +2,10 @@ package com.oreilly.persistence.dao;
 
 import com.oreilly.persistence.entities.Officer;
 import com.oreilly.persistence.entities.Rank;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -20,7 +18,6 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.*;
 
 @DataJpaTest
-@RunWith(SpringRunner.class)
 @Transactional
 public class OfficerRepositoryTest {
     @Autowired
@@ -30,14 +27,14 @@ public class OfficerRepositoryTest {
     private JdbcTemplate template;
 
     @Test
-    public void testSave() throws Exception {
+    public void testSave() {
         Officer officer = new Officer(Rank.LIEUTENANT, "Nyota", "Uhuru");
         officer = repository.save(officer);
         assertNotNull(officer.getId());
     }
 
     @Test
-    public void findById() throws Exception {
+    public void findById() {
         template.query("select id from officers", (rs, num) -> rs.getInt("id"))
                 .forEach(id -> {
                     Optional<Officer> officer = repository.findById(id);
@@ -47,7 +44,7 @@ public class OfficerRepositoryTest {
     }
 
     @Test
-    public void findAll() throws Exception {
+    public void findAll() {
         List<String> dbNames = repository.findAll().stream()
                                          .map(Officer::getLast)
                                          .collect(Collectors.toList());
@@ -55,22 +52,21 @@ public class OfficerRepositoryTest {
     }
 
     @Test
-    public void count() throws Exception {
+    public void count() {
         assertEquals(5, repository.count());
     }
 
     @Test
-    public void deleteById() throws Exception {
+    public void deleteById() {
         template.query("select id from officers", (rs, num) -> rs.getInt("id"))
                 .forEach(id -> repository.deleteById(id));
         assertEquals(0, repository.count());
     }
 
     @Test
-    public void existsById() throws Exception {
+    public void existsById() {
         template.query("select id from officers", (rs, num) -> rs.getInt("id"))
-                .forEach(id -> assertTrue(String.format("%d should exist", id),
-                                          repository.existsById(id)));
+                .forEach(id -> assertTrue(repository.existsById(id)));
     }
 
     @Test
@@ -82,14 +78,14 @@ public class OfficerRepositoryTest {
     }
 
     @Test
-    public void findByRank() throws Exception {
+    public void findByRank() {
         repository.findByRank(Rank.CAPTAIN).forEach(captain ->
                                                             assertEquals(Rank.CAPTAIN, captain.getRank()));
 
     }
 
     @Test
-    public void findByLast() throws Exception {
+    public void findByLast() {
         List<Officer> kirks = repository.findByLast("Kirk");
         assertEquals(1, kirks.size());
         assertEquals("Kirk", kirks.get(0).getLast());

@@ -1,5 +1,5 @@
 plugins {
-  id 'org.springframework.boot' version '2.1.2.RELEASE'
+  id 'org.springframework.boot' version '2.2.4.RELEASE'
 }
 
 apply plugin: 'java'
@@ -8,8 +8,6 @@ apply plugin: 'io.spring.dependency-management'
 
 group = 'com.oreilly'
 version = '1.0'
-sourceCompatibility = 11
-targetCompatibility = 11
 
 repositories {
     mavenCentral()
@@ -21,4 +19,8 @@ dependencies {
     compile 'org.springframework.data:spring-data-rest-hal-browser'
     runtime('com.h2database:h2')
     testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+
+test {
+    useJUnitPlatform()
 }

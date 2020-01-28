@@ -20,9 +20,9 @@ public class JdbcOfficerDAO implements OfficerDAO {
     private JdbcTemplate jdbcTemplate;
     private SimpleJdbcInsert insertOfficer;
 
-    public JdbcOfficerDAO(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
-        insertOfficer = new SimpleJdbcInsert(dataSource)
+    public JdbcOfficerDAO(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+        insertOfficer = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("officers")
                 .usingGeneratedKeyColumns("id");
     }
