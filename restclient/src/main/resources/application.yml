@@ -1,4 +1,0 @@
-spring:
-  jackson:
-    # property-naming-strategy: CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES
-    property-naming-strategy: SNAKE_CASE
