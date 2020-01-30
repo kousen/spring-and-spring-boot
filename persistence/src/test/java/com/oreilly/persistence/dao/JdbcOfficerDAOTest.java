@@ -13,8 +13,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional // tx for each test rolls back by default
@@ -70,6 +71,6 @@ public class JdbcOfficerDAOTest {
     @Test
     public void existsById() {
         IntStream.rangeClosed(1, 5)
-                 .forEach(id -> assertTrue(String.format("%d should exist", id), dao.existsById(id)));
+                 .forEach(id -> assertTrue(dao.existsById(id)));
     }
 }

@@ -13,10 +13,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional
@@ -78,8 +79,7 @@ public class JpaOfficerDAOTest {
     @Test
     public void existsById() {
         template.query("select id from officers", (rs, num) -> rs.getInt("id"))
-                .forEach(id -> assertTrue(String.format("%d should exist", id),
-                                          dao.existsById(id)));
+                .forEach(id -> assertTrue(dao.existsById(id)));
     }
 
     @Test
