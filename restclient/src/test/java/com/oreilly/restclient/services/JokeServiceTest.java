@@ -23,4 +23,8 @@ public class JokeServiceTest {
                 joke.contains("Walls"));
     }
 
+    @Test
+    void getJokeAsString() {
+        System.out.println(service.getJokeAsString("Craig", "Walls"));
+    }
 }

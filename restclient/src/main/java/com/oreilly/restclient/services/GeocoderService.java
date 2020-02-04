@@ -37,8 +37,7 @@ public class GeocoderService {
                 .collect(Collectors.joining(","));
         String path = "/maps/api/geocode/json";
         Response response = client.get()
-                .uri(uriBuilder ->
-                        uriBuilder.path(path)
+                .uri(uriBuilder -> uriBuilder.path(path)
                         .queryParam("address", encoded)
                         .queryParam("key", KEY)
                         .build()

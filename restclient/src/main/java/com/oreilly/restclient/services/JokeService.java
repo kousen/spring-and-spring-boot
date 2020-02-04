@@ -16,13 +16,31 @@ public class JokeService {
     }
 
     public String getJoke(String first, String last) {
-        String path = "/jokes/random?limitTo=[nerdy]&firstName={first}&lastName={last}";
+        String path = "/jokes/random";
         return client.get()
-                .uri(path, first, last)
+                .uri(uriBuilder -> uriBuilder.path(path)
+                        .queryParam("limitTo", "[nerdy]")
+                        .queryParam("firstName", first)
+                        .queryParam("lastName", last)
+                        .build())
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(JokeResponse.class)
                 .map(jokeResponse -> jokeResponse.getValue().getJoke())
+                .block(Duration.ofSeconds(2));
+    }
+
+    public String getJokeAsString(String first, String last) {
+        String path = "/jokes/random";
+        return client.get()
+                .uri(uriBuilder -> uriBuilder.path(path)
+                        .queryParam("limitTo", "[nerdy]")
+                        .queryParam("firstName", first)
+                        .queryParam("lastName", last)
+                        .build())
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(String.class)
                 .block(Duration.ofSeconds(2));
     }
 }
