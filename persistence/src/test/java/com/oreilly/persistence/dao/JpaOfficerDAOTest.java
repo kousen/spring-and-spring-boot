@@ -55,7 +55,7 @@ public class JpaOfficerDAOTest {
     @Test
     public void findAll() {
         List<String> dbNames = dao.findAll().stream()
-                                  .map(Officer::getLast)
+                                  .map(Officer::getLastName)
                                   .collect(Collectors.toList());
         assertThat(dbNames, containsInAnyOrder("Kirk", "Picard", "Sisko", "Janeway", "Archer"));
     }

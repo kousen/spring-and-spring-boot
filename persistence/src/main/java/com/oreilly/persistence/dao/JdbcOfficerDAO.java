@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
-import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -31,8 +30,8 @@ public class JdbcOfficerDAO implements OfficerDAO {
     public Officer save(Officer officer) {
         Map<String,Object> parameters = new HashMap<>();
         parameters.put("rank", officer.getRank());
-        parameters.put("first_name", officer.getFirst());
-        parameters.put("last_name", officer.getLast());
+        parameters.put("first_name", officer.getFirstName());
+        parameters.put("last_name", officer.getLastName());
         Integer newId = (Integer) insertOfficer.executeAndReturnKey(parameters);
         officer.setId(newId);
         return officer;

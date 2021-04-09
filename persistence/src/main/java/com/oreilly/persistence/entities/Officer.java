@@ -5,31 +5,28 @@ import javax.persistence.*;
 @Entity
 @Table(name = "officers")
 public class Officer {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Integer id;
 
     @Enumerated(EnumType.STRING)
     private Rank rank;
 
-    @Column(name = "first_name")
-    private String first;
-
-    @Column(name = "last_name")
-    private String last;
+    private String firstName;
+    private String lastName;
 
     public Officer() {}
 
-    public Officer(Rank rank, String first, String last) {
+    public Officer(Rank rank, String firstName, String lastName) {
         this.rank = rank;
-        this.first = first;
-        this.last = last;
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 
-    public Officer(Integer id, Rank rank, String first, String last) {
+    public Officer(Integer id, Rank rank, String firstName, String lastName) {
         this.id = id;
         this.rank = rank;
-        this.first = first;
-        this.last = last;
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 
     public Integer getId() {
@@ -48,25 +45,25 @@ public class Officer {
         this.rank = rank;
     }
 
-    public String getFirst() {
-        return first;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setFirst(String first) {
-        this.first = first;
+    public void setFirstName(String first) {
+        this.firstName = first;
     }
 
-    public String getLast() {
-        return last;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setLast(String last) {
-        this.last = last;
+    public void setLastName(String last) {
+        this.lastName = last;
     }
 
     @Override
     public String toString() {
-        return String.format("%s %s %s", rank, first, last);
+        return String.format("%s %s %s", rank, firstName, lastName);
     }
 
     @Override
@@ -78,16 +75,16 @@ public class Officer {
 
         if (!id.equals(officer.id)) return false;
         if (rank != officer.rank) return false;
-        if (first != null ? !first.equals(officer.first) : officer.first != null) return false;
-        return last.equals(officer.last);
+        if (firstName != null ? !firstName.equals(officer.firstName) : officer.firstName != null) return false;
+        return lastName.equals(officer.lastName);
     }
 
     @Override
     public int hashCode() {
         int result = id.hashCode();
         result = 31 * result + rank.hashCode();
-        result = 31 * result + (first != null ? first.hashCode() : 0);
-        result = 31 * result + last.hashCode();
+        result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
+        result = 31 * result + lastName.hashCode();
         return result;
     }
 }

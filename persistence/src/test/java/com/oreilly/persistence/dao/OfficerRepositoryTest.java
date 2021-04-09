@@ -13,11 +13,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@SuppressWarnings("SqlResolve")
 @DataJpaTest
 @Transactional
 public class OfficerRepositoryTest {
@@ -26,6 +25,10 @@ public class OfficerRepositoryTest {
 
     @Autowired
     private JdbcTemplate template;
+
+    private List<Integer> getIds() {
+        return template.query("select id from officers", (rs, num) -> rs.getInt("id"));
+    }
 
     @Test
     public void testSave() {
@@ -36,8 +39,7 @@ public class OfficerRepositoryTest {
 
     @Test
     public void findById() {
-        template.query("select id from officers", (rs, num) -> rs.getInt("id"))
-                .forEach(id -> {
+        getIds().forEach(id -> {
                     Optional<Officer> officer = repository.findById(id);
                     assertTrue(officer.isPresent());
                     assertEquals(id, officer.get().getId());
@@ -46,9 +48,10 @@ public class OfficerRepositoryTest {
 
     @Test
     public void findAll() {
-        List<String> dbNames = repository.findAll().stream()
-                                         .map(Officer::getLast)
-                                         .collect(Collectors.toList());
+        List<String> dbNames = repository.findAll()
+                .stream()
+                .map(Officer::getLastName)
+                .collect(Collectors.toList());
         assertThat(dbNames, containsInAnyOrder("Kirk", "Picard", "Sisko", "Janeway", "Archer"));
     }
 
@@ -59,8 +62,7 @@ public class OfficerRepositoryTest {
 
     @Test
     public void deleteById() {
-        template.query("select id from officers", (rs, num) -> rs.getInt("id"))
-                .forEach(id -> repository.deleteById(id));
+        getIds().forEach(id -> repository.deleteById(id));
         assertEquals(0, repository.count());
     }
 
@@ -72,23 +74,23 @@ public class OfficerRepositoryTest {
 
     @Test
     public void doesNotExist() {
-        List<Integer> ids = template.query("select id from officers",
-                                           (rs, num) -> rs.getInt("id"));
-        assertThat(ids, not(contains(999)));
+        assertThat(getIds(), not(contains(999)));
         assertFalse(repository.existsById(999));
     }
 
     @Test
     public void findByRank() {
-        repository.findByRank(Rank.CAPTAIN).forEach(captain ->
-                                                            assertEquals(Rank.CAPTAIN, captain.getRank()));
+        repository.findByRank(Rank.CAPTAIN)
+                .forEach(captain ->
+                        assertEquals(Rank.CAPTAIN, captain.getRank()));
 
     }
 
     @Test
-    public void findByLast() {
-        List<Officer> kirks = repository.findByLast("Kirk");
-        assertEquals(1, kirks.size());
-        assertEquals("Kirk", kirks.get(0).getLast());
+    public void findByLastNameLikeAndRank() {
+        List<Officer> officers = repository.findByLastNameLikeAndRank("%i%", Rank.CAPTAIN);
+        assertEquals(3, officers.size());
+        officers.forEach(officer -> assertTrue(officer.getLastName().contains("i")));
+        officers.forEach(System.out::println);
     }
 }
