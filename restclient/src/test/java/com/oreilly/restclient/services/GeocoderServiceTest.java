@@ -7,8 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class GeocoderServiceTest {
@@ -23,7 +22,8 @@ class GeocoderServiceTest {
         logger.info(site.toString());
         assertAll(
                 () -> assertEquals(42.36, site.getLatitude(), 0.01),
-                () -> assertEquals(-71.06, site.getLongitude(), 0.01)
+                () -> assertEquals(-71.06, site.getLongitude(), 0.01),
+                () -> assertNotNull(site.getAddress())
         );
     }
 
@@ -36,5 +36,12 @@ class GeocoderServiceTest {
                 () -> assertEquals(37.42, site.getLatitude(), 0.01),
                 () -> assertEquals(-122.08, site.getLongitude(), 0.01)
         );
+    }
+
+    @Test
+    void checkLocationsAroundTheWorld() {
+        System.out.println(service.getLatLng("Moscow, Russia"));
+        System.out.println(service.getLatLng("McMurdo Base, Antarctia"));
+        System.out.println(service.getLatLng("Quito, Ecuador"));
     }
 }
