@@ -2,9 +2,9 @@ package com.oreilly.restclient.entities;
 
 public class Site {
     private Integer id;
-    private String address;
-    private double latitude;
-    private double longitude;
+    private final String address;
+    private final double latitude;
+    private final double longitude;
 
     public Site(String address, double latitude, double longitude) {
         this.address = address;

@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 public class JokeServiceTest {
-    private Logger logger = LoggerFactory.getLogger(JokeService.class);
+    private final Logger logger = LoggerFactory.getLogger(JokeService.class);
 
     @Autowired
     private JokeService service;
@@ -21,10 +21,5 @@ public class JokeServiceTest {
         logger.info(joke);
         assertTrue(joke.contains("Craig") ||
                 joke.contains("Walls"));
-    }
-
-    @Test
-    void getJokeAsString() {
-        System.out.println(service.getJokeAsString("Craig", "Walls"));
     }
 }
