@@ -1,0 +1,11 @@
+REST Controller
+https://learning.oreilly.com/scenarios/spring-boot-skills/9781098109455/
+
+Dependency Injection
+https://learning.oreilly.com/scenarios/spring-boot-skills/9781098109462/
+
+Property Value
+https://learning.oreilly.com/scenarios/spring-boot-skills/9781098109479/
+
+Full Functional Test
+https://learning.oreilly.com/scenarios/spring-boot-skills/9781098109486/
