@@ -1,6 +1,7 @@
 package com.oreilly.restclient.services;
 
 import com.oreilly.restclient.json.JokeResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -12,6 +13,7 @@ import java.time.Duration;
 public class JokeService {
     private final WebClient client;
 
+    @Autowired
     public JokeService(WebClient.Builder builder) {
         client = builder.baseUrl("http://api.icndb.com").build();
     }
