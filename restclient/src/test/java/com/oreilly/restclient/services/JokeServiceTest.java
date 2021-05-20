@@ -12,14 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class JokeServiceTest {
     private final Logger logger = LoggerFactory.getLogger(JokeService.class);
 
-    @Autowired
-    private JokeService service;
+//    @Autowired
+//    private JokeService service;
 
     @Test
-    public void getJoke() {
+    public void getJoke(@Autowired JokeService service) {
         String joke = service.getJoke("Craig", "Walls");
         logger.info(joke);
-        assertTrue(joke.contains("Craig") ||
-                joke.contains("Walls"));
+        assertTrue(joke.contains("Craig") || joke.contains("Walls"));
     }
 }
