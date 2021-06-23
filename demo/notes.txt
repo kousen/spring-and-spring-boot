@@ -1,0 +1,18 @@
+During start-up, Spring:
+
+1. Reads all bean definitions from all sources (annotations, @Bean methods, XML)
+2. Post-processes the definitions (insert @Value from properties file)
+3. Instatiates and wires together all the beans
+4. Post-processes the beans --> generates any needed proxies, like for transactions
+
+That's how Spring applied declarative services to bean methods
+
+High-level architecture of every Java web app ever:
+
+Presentation layer (controllers and views)
+||
+Service layer (business logic and transaction boundaries)
+||
+Persistence layer (converts Java classes to tables and back)
+||
+DB
