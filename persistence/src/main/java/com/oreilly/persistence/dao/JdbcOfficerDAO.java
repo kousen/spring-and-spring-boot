@@ -2,6 +2,7 @@ package com.oreilly.persistence.dao;
 
 import com.oreilly.persistence.entities.Officer;
 import com.oreilly.persistence.entities.Rank;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
@@ -14,11 +15,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@SuppressWarnings("ConstantConditions")
 @Repository
 public class JdbcOfficerDAO implements OfficerDAO {
-    private JdbcTemplate jdbcTemplate;
-    private SimpleJdbcInsert insertOfficer;
+    private final JdbcTemplate jdbcTemplate;
+    private final SimpleJdbcInsert insertOfficer;
 
+    @Autowired
     public JdbcOfficerDAO(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
         insertOfficer = new SimpleJdbcInsert(jdbcTemplate)
@@ -65,8 +68,7 @@ public class JdbcOfficerDAO implements OfficerDAO {
 
     @Override
     public long count() {
-        return jdbcTemplate.queryForObject(
-                "select count(*) from officers", Long.class);
+        return jdbcTemplate.queryForObject("select count(*) from officers", Long.class);
     }
 
     @Override

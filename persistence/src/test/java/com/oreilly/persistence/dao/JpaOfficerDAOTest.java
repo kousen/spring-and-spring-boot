@@ -29,6 +29,10 @@ public class JpaOfficerDAOTest {
     @Autowired
     private JdbcTemplate template;
 
+    private List<Integer> getIds() {
+        return template.query("select id from officers", (rs, num) -> rs.getInt("id"));
+    }
+
     @Test
     public void testSave() {
         Officer officer = new Officer(Rank.LIEUTENANT, "Nyota", "Uhuru");
@@ -38,8 +42,7 @@ public class JpaOfficerDAOTest {
 
     @Test
     public void findOneThatExists() {
-        template.query("select id from officers", (rs, num) -> rs.getInt("id"))
-                .forEach(id -> {
+        getIds().forEach(id -> {
                     Optional<Officer> officer = dao.findById(id);
                     assertTrue(officer.isPresent());
                     assertEquals(id, officer.get().getId());
@@ -67,8 +70,7 @@ public class JpaOfficerDAOTest {
 
     @Test
     public void delete() {
-        template.query("select id from officers", (rs, num) -> rs.getInt("id"))
-                .forEach(id -> {
+        getIds().forEach(id -> {
                     Optional<Officer> officer = dao.findById(id);
                     assertTrue(officer.isPresent());
                     dao.delete(officer.get());
@@ -78,14 +80,12 @@ public class JpaOfficerDAOTest {
 
     @Test
     public void existsById() {
-        template.query("select id from officers", (rs, num) -> rs.getInt("id"))
-                .forEach(id -> assertTrue(dao.existsById(id)));
+        getIds().forEach(id -> assertTrue(dao.existsById(id)));
     }
 
     @Test
     public void doesNotExist() {
-        List<Integer> ids = template.query("select id from officers",
-                                           (rs, num) -> rs.getInt("id"));
+        List<Integer> ids = getIds();
         assertThat(ids, not(contains(999)));
         assertFalse(dao.existsById(999));
     }
