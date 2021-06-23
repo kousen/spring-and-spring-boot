@@ -1,0 +1,33 @@
+
+Before ORM tools like Hibernate came along, we had entities and
+    Value Objects or Data Transfer Objects or Transfer Objects
+
+In EJBs, entity beans were always connected to the database
+Database connections are a limited resource
+
+If you made a class called ProductEJB, you would also make a class
+called ProductVO or ProductTO or ProductDTO to hold the data
+while not being connected to the db
+
+You would ask Spring (on in EJBs, the Session Bean) to grab the products
+That would select the entity beans
+You copy the entity bean data into transfer objects
+Let go of the entity beans
+Render your view with the transfer beans
+
+EJB entity beans were always connected
+Transfer object were never connected
+
+Martin Fowler (among others) calls a code smell
+
+Hibernate came along and said rather than have objects that always
+and never connected, have objects that are sometimes connected
+
+Hibernate says your domain objects are sometimes connected and sometimes not
+
+Transient objects  --> not yet or no longer mapped to a table row
+Persistent objects --> is mapped to a table row, managed by Hibernate
+Detached objects   --> is mapped ot a row, but not currently connected
+
+
+

@@ -19,7 +19,13 @@ public class JokeServiceTest {
     public void getJoke() {
         String joke = service.getJoke("Craig", "Walls");
         logger.info(joke);
-        assertTrue(joke.contains("Craig") ||
-                joke.contains("Walls"));
+        assertTrue(joke.contains("Craig") || joke.contains("Walls"));
+    }
+
+    @Test
+    public void getJokeRestTemplate() {
+        String joke = service.getJokeRT("Greg", "Turnquist");
+        logger.info(joke);
+        assertTrue(joke.contains("Greg") || joke.contains("Turnquist"));
     }
 }

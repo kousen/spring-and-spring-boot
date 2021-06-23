@@ -4,13 +4,14 @@ import com.oreilly.demo.entities.Greeting;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+// JavaConfig approach --> @Configuration class with @Bean methods
 @Configuration
 public class AppConfig {
 
     @Bean // @Scope("prototype")
     // @Lazy(value = false)
     public Greeting defaultGreeting() {
-        return new Greeting();
+        return new Greeting("Hello, World!");
     }
 
     @Bean
