@@ -21,6 +21,12 @@ public class JdbcOfficerDAO implements OfficerDAO {
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert insertOfficer;
 
+    private final RowMapper<Officer> officerMapper =
+            (ResultSet rs, int rowNum) -> new Officer(rs.getInt("id"), // Java 8 lambda expression
+                    Rank.valueOf(rs.getString("rank")),
+                    rs.getString("first_name"),
+                    rs.getString("last_name"));
+
     @Autowired
     public JdbcOfficerDAO(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -31,7 +37,7 @@ public class JdbcOfficerDAO implements OfficerDAO {
 
     @Override
     public Officer save(Officer officer) {
-        Map<String,Object> parameters = new HashMap<>();
+        Map<String, Object> parameters = new HashMap<>();
         parameters.put("rank", officer.getRank());
         parameters.put("first_name", officer.getFirstName());
         parameters.put("last_name", officer.getLastName());
@@ -45,25 +51,13 @@ public class JdbcOfficerDAO implements OfficerDAO {
         if (!existsById(id)) return Optional.empty();
         return Optional.of(jdbcTemplate.queryForObject(
                 "SELECT * FROM officers WHERE id=?",
-                new RowMapper<Officer>() {  // Java 7 anonymous inner class
-                    @Override
-                    public Officer mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        return new Officer(rs.getInt("id"),
-                                           Rank.valueOf(rs.getString("rank")),
-                                           rs.getString("first_name"),
-                                           rs.getString("last_name"));
-                    }
-                },
+                officerMapper,
                 id));
     }
 
     @Override
     public List<Officer> findAll() {
-        return jdbcTemplate.query("SELECT * FROM officers",
-                                  (rs, rowNum) -> new Officer(rs.getInt("id"), // Java 8 lambda expression
-                                                              Rank.valueOf(rs.getString("rank")),
-                                                              rs.getString("first_name"),
-                                                              rs.getString("last_name")));
+        return jdbcTemplate.query("SELECT * FROM officers", officerMapper);
     }
 
     @Override

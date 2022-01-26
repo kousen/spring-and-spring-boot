@@ -5,7 +5,7 @@ import javax.persistence.*;
 @Entity
 @Table(name = "officers")
 public class Officer {
-    @Id @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Enumerated(EnumType.STRING)
