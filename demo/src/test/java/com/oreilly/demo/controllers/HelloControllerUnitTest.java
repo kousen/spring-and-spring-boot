@@ -19,8 +19,8 @@ public class HelloControllerUnitTest {
         Model model = new BindingAwareModelMap();
         String result = controller.sayHello("World", model);
         assertAll(
-                () -> assertEquals("World", model.asMap().get("user")),
-                () -> assertEquals("hello", result)
+                () -> assertEquals("World", model.getAttribute("user")),
+                () -> assertEquals("welcome", result)
         );
     }
 
@@ -31,6 +31,6 @@ public class HelloControllerUnitTest {
         // set expectations on mock
         when(mockModel.addAttribute(anyString(), any())).thenReturn(mockModel);
         String result = controller.sayHello("Dolly", mockModel);
-        assertEquals("hello", result);
+        assertEquals("welcome", result);
     }
 }

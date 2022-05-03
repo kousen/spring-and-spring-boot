@@ -1,9 +1,14 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="en">
 <head>
     <title>Hello, World!</title>
 </head>
 <body>
-    <h2>Say hello <a href="/hello">here</a></h2>
+    <h2>Say hello</h2>
+    <form method="get" action="/hello">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name"><br><br>
+        <input type="submit" value="Say Hello">
+    </form>
 </body>
 </html>
