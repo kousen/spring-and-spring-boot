@@ -13,12 +13,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.not;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+@SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
 @SpringBootTest
 @Transactional
 public class JpaOfficerDAOTest {
@@ -60,7 +58,7 @@ public class JpaOfficerDAOTest {
         List<String> dbNames = dao.findAll().stream()
                                   .map(Officer::getLastName)
                                   .collect(Collectors.toList());
-        assertThat(dbNames, containsInAnyOrder("Kirk", "Picard", "Sisko", "Janeway", "Archer"));
+        assertThat(dbNames).contains("Kirk", "Picard", "Sisko", "Janeway", "Archer");
     }
 
     @Test
@@ -86,7 +84,7 @@ public class JpaOfficerDAOTest {
     @Test
     public void doesNotExist() {
         List<Integer> ids = getIds();
-        assertThat(ids, not(contains(999)));
+        assertThat(ids).doesNotContain(999);
         assertFalse(dao.existsById(999));
     }
 

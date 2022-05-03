@@ -12,11 +12,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SuppressWarnings("SqlResolve")
+@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
 @DataJpaTest
 @Transactional
 public class OfficerRepositoryTest {
@@ -52,7 +51,7 @@ public class OfficerRepositoryTest {
                 .stream()
                 .map(Officer::getLastName)
                 .collect(Collectors.toList());
-        assertThat(dbNames, containsInAnyOrder("Kirk", "Picard", "Sisko", "Janeway", "Archer"));
+        assertThat(dbNames).contains("Kirk", "Picard", "Sisko", "Janeway", "Archer");
     }
 
     @Test
@@ -74,7 +73,7 @@ public class OfficerRepositoryTest {
 
     @Test
     public void doesNotExist() {
-        assertThat(getIds(), not(contains(999)));
+        assertThat(getIds()).doesNotContain(999);
         assertFalse(repository.existsById(999));
     }
 

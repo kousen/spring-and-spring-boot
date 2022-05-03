@@ -13,8 +13,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -54,7 +53,7 @@ public class JdbcOfficerDAOTest {
         List<String> dbNames = dao.findAll().stream()
                                   .map(Officer::getLastName)
                                   .collect(Collectors.toList());
-        assertThat(dbNames, containsInAnyOrder("Kirk", "Picard", "Sisko", "Janeway", "Archer"));
+        assertThat(dbNames).contains("Kirk", "Picard", "Sisko", "Janeway", "Archer");
     }
 
     @Test
