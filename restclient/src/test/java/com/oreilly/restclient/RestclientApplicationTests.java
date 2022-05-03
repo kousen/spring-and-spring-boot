@@ -30,6 +30,11 @@ class RestclientApplicationTests {
 	}
 
 	@Test
+	void checkConfigProperties() {
+
+	}
+
+	@Test
 	void showSingletonBehavior() {
 		NumberFormat nf1 = context.getBean("indiaNumberFormat", NumberFormat.class);
 		NumberFormat nf2 = context.getBean("indiaNumberFormat", NumberFormat.class);
