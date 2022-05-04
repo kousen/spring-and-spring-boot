@@ -1,6 +1,6 @@
 package com.oreilly.demo.controllers;
 
-import com.oreilly.demo.entities.Greeting;
+import com.oreilly.demo.json.Greeting;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -1,6 +1,6 @@
 package com.oreilly.demo.config;
 
-import com.oreilly.demo.entities.Greeting;
+import com.oreilly.demo.json.Greeting;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

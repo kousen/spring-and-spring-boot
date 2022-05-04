@@ -1,4 +1,4 @@
-package com.oreilly.demo.entities;
+package com.oreilly.demo.json;
 
 import java.util.Objects;
 
