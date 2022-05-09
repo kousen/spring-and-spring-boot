@@ -10,14 +10,13 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-@SuppressWarnings("ConstantConditions")
+@SuppressWarnings({"ConstantConditions", "SqlResolve", "SqlNoDataSourceInspection"})
 @Repository
 public class JdbcOfficerDAO implements OfficerDAO {
     private final JdbcTemplate jdbcTemplate;
@@ -60,6 +59,7 @@ public class JdbcOfficerDAO implements OfficerDAO {
     }
 
     // Alternative 1: extra SQL call to verify row exists
+    @SuppressWarnings("unused")
     public Optional<Officer> findById1(Integer id) {
         if (!existsById(id)) return Optional.empty();
         return Optional.ofNullable(jdbcTemplate.queryForObject(
@@ -69,6 +69,7 @@ public class JdbcOfficerDAO implements OfficerDAO {
     }
 
     // Alternative 2: catch the exception when row doesn't exist
+    @SuppressWarnings("unused")
     public Optional<Officer> findById2(Integer id) {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(
