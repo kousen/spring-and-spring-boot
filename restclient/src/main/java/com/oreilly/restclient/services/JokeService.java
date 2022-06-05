@@ -2,6 +2,7 @@ package com.oreilly.restclient.services;
 
 import com.oreilly.restclient.config.MyProperties;
 import com.oreilly.restclient.json.JokeResponse;
+import com.oreilly.restclient.json.JokeValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.MediaType;
@@ -10,6 +11,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
+import java.util.Optional;
 
 @Service
 public class JokeService {
@@ -28,7 +30,16 @@ public class JokeService {
     public String getJokeRT(String first, String last) {
         String url = baseUrl + "/jokes/random?limitTo=[nerdy]&firstName="
                 + first + "&lastName=" + last;
-        return template.getForObject(url, JokeResponse.class).getValue().getJoke();
+        JokeResponse response = template.getForObject(url, JokeResponse.class);
+//        if (response != null) {
+//            return response.getValue().getJoke();
+//        } else {
+//            return "No joke found";
+//        }
+        return Optional.ofNullable(response)
+                .map(JokeResponse::getValue)
+                .map(JokeValue::getJoke)
+                .orElse("No joke found");
     }
 
     public String getJoke(String first, String last) {
