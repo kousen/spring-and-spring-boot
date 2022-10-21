@@ -25,4 +25,13 @@ public class AstroServiceTest {
         assertTrue(response.getNumber() >= 0);
         assertEquals(response.getNumber(), response.getPeople().size());
     }
+
+    @Test
+    public void getAstronautsReactive() {
+        AstroResponse response = service.getAstronautsReactive();
+        logger.info(response.toString());
+        assertEquals("success", response.getMessage());
+        assertTrue(response.getNumber() >= 0);
+        assertEquals(response.getNumber(), response.getPeople().size());
+    }
 }
