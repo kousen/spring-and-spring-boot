@@ -1,19 +1,18 @@
 package com.oreilly.astro.services;
 
 import com.oreilly.astro.entities.AstroResponse;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@SpringBootTest
 public class AstroServiceUnitTest {
     @InjectMocks
     private AstroService service = new AstroService(new RestTemplateBuilder());
@@ -21,9 +20,9 @@ public class AstroServiceUnitTest {
     @Mock
     private RestTemplate template;
 
-    private AstroResponse stub = new AstroResponse();
+    private final AstroResponse stub = new AstroResponse();
 
-    @Before
+    @BeforeEach
     public void setUp() {
         stub.setNumber(6);
         stub.setMessage("success");

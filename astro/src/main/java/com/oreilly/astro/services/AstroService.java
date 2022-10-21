@@ -11,7 +11,7 @@ import java.time.Duration;
 @Service
 public class AstroService {
 
-    private RestTemplate template;
+    private final RestTemplate template;
 
     @Autowired
     public AstroService(RestTemplateBuilder builder) {
