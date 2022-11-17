@@ -18,7 +18,7 @@ public class AstroService {
 
     @Autowired
     public AstroService(RestTemplateBuilder restTemplateBuilder) {
-        client = WebClient.builder().baseUrl(baseUrl).build();
+        client = WebClient.create(baseUrl);
         template = restTemplateBuilder.build();
     }
 

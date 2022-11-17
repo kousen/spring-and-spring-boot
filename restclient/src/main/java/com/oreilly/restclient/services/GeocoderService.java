@@ -7,10 +7,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class GeocoderService {
@@ -18,9 +17,8 @@ public class GeocoderService {
 
     private final WebClient client;
 
-    public GeocoderService(WebClient.Builder builder) {
-        client = builder.baseUrl("https://maps.googleapis.com")
-                .build();
+    public GeocoderService() {
+        client = WebClient.create("https://maps.googleapis.com");
     }
 
     private String encodeString(String s) {
@@ -32,7 +30,7 @@ public class GeocoderService {
     }
 
     public Site getLatLng(String... address) {
-        String encoded = Stream.of(address)
+        String encoded = Arrays.stream(address)
                 .map(this::encodeString)
                 .collect(Collectors.joining(","));
         String path = "/maps/api/geocode/json";
