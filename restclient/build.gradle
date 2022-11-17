@@ -18,6 +18,13 @@ dependencies {
 	testImplementation('org.springframework.boot:spring-boot-starter-test')
 	testImplementation 'io.projectreactor:reactor-test'
 	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+	boolean isMacOS = System.getProperty("os.name").toLowerCase().contains("mac")
+	String architecture = System.getProperty("os.arch").toLowerCase()
+	if (isMacOS && architecture == "aarch64") {
+		implementation group: 'io.netty', name: 'netty-resolver-dns-native-macos',
+				version: '4.1.85.Final', classifier: 'osx-aarch_64'
+	}
 }
 
 test {

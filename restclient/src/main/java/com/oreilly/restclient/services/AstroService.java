@@ -17,8 +17,8 @@ public class AstroService {
     private final String baseUrl = "http://api.open-notify.org";
 
     @Autowired
-    public AstroService(WebClient.Builder builder, RestTemplateBuilder restTemplateBuilder) {
-        client = builder.baseUrl(baseUrl).build();
+    public AstroService(RestTemplateBuilder restTemplateBuilder) {
+        client = WebClient.builder().baseUrl(baseUrl).build();
         template = restTemplateBuilder.build();
     }
 

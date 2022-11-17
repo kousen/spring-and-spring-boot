@@ -13,6 +13,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.time.Duration;
 import java.util.Optional;
 
+// NOTE: Joke web site appears to be gone forever :(
+
 @Service
 public class JokeService {
     private final WebClient client;
@@ -31,11 +33,6 @@ public class JokeService {
         String url = baseUrl + "/jokes/random?limitTo=[nerdy]&firstName="
                 + first + "&lastName=" + last;
         JokeResponse response = template.getForObject(url, JokeResponse.class);
-//        if (response != null) {
-//            return response.getValue().getJoke();
-//        } else {
-//            return "No joke found";
-//        }
         return Optional.ofNullable(response)
                 .map(JokeResponse::getValue)
                 .map(JokeValue::getJoke)
