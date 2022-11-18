@@ -1,11 +1,6 @@
 package com.kousenit.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class Result {
-    @JsonProperty("formatted_address")
     private String formattedAddress;
     private Geometry geometry;
 

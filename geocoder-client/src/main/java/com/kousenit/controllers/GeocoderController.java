@@ -4,14 +4,15 @@ import com.kousenit.entities.Site;
 import com.kousenit.repositories.SiteRepository;
 import com.kousenit.services.GeocoderService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 public class GeocoderController {
-    private GeocoderService service;
-    private SiteRepository repository;
+    private final GeocoderService service;
+    private final SiteRepository repository;
 
     public GeocoderController(GeocoderService service, SiteRepository repository) {
         this.service = service;
@@ -29,8 +30,8 @@ public class GeocoderController {
     }
 
     @GetMapping("/geo/{id}")
-    public Site getLocation(@PathVariable Integer id) {
-        return repository.findOne(id);
+    public ResponseEntity<Site> getLocation(@PathVariable Integer id) {
+        return ResponseEntity.of(repository.findById(id));
     }
 
     @GetMapping("/all")
