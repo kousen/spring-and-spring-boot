@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
@@ -38,11 +40,8 @@ public class JdbcOfficerDAO implements OfficerDAO {
 
     @Override
     public Officer save(Officer officer) {
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("rank", officer.getRank());
-        parameters.put("first_name", officer.getFirstName());
-        parameters.put("last_name", officer.getLastName());
-        Integer newId = (Integer) insertOfficer.executeAndReturnKey(parameters);
+        SqlParameterSource source = new BeanPropertySqlParameterSource(officer);
+        Integer newId = (Integer) insertOfficer.executeAndReturnKey(source);
         officer.setId(newId);
         return officer;
     }
