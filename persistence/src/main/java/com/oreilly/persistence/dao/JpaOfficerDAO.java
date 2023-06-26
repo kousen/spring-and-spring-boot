@@ -1,4 +1,4 @@
-package com.oreilly.demo.dao;
+package com.oreilly.persistence.dao;
 
 import com.oreilly.persistence.entities.Officer;
 import org.springframework.stereotype.Repository;
