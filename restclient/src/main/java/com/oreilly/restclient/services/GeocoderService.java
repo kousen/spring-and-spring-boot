@@ -5,15 +5,15 @@ import com.oreilly.restclient.json.Response;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @Service
 public class GeocoderService {
-    private static final String KEY = "AIzaSyDw_d6dfxDEI7MAvqfGXEIsEMwjC1PWRno";
+    private static final String KEY = "AIzaSyDz89mFBP4a-N8jE7uFQEd1J8y7d-_ksH4";
 
     private final WebClient client;
 
@@ -22,11 +22,7 @@ public class GeocoderService {
     }
 
     private String encodeString(String s) {
-        try {
-            return URLEncoder.encode(s, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalArgumentException(e);
-        }
+        return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
     public Site getLatLng(String... address) {
