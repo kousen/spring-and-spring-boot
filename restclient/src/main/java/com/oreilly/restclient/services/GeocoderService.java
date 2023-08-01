@@ -38,6 +38,7 @@ public class GeocoderService {
                 )
                 .retrieve()
                 .bodyToMono(Response.class)
+                .log()
                 .block(Duration.ofSeconds(2));
         assert response != null;
         return new Site(response.getFormattedAddress(),

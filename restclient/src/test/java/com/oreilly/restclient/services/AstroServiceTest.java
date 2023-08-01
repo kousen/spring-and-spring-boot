@@ -27,7 +27,7 @@ public class AstroServiceTest {
     }
 
     @Test
-    public void getJokeRestTemplate() {
+    public void getAstroResponseRT() {
         AstroResponse response = service.getAstroResponseRT();
         logger.info(response.toString());
         assertTrue(response.getNumber() >= 0);
