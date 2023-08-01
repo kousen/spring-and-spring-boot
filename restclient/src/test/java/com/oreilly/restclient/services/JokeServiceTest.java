@@ -26,7 +26,7 @@ public class JokeServiceTest {
     void setUp() throws Exception {
         HttpResponse<Void> response = HttpClient.newHttpClient()
                 .send(HttpRequest.newBuilder()
-                        .uri(URI.create("http://icndb.com"))
+                        .uri(URI.create("https://api.chucknorris.io"))
                         .method("HEAD", HttpRequest.BodyPublishers.noBody())
                         .build(),
                         HttpResponse.BodyHandlers.discarding());
@@ -35,15 +35,15 @@ public class JokeServiceTest {
 
     @Test
     public void getJoke() {
-        String joke = service.getJoke("Craig", "Walls");
+        String joke = service.getJoke();
         logger.info(joke);
-        assertTrue(joke.contains("Craig") || joke.contains("Walls"));
+        assertTrue(joke.contains("Chuck") || joke.contains("Norris"));
     }
 
     @Test
     public void getJokeRestTemplate() {
-        String joke = service.getJokeRT("Greg", "Turnquist");
+        String joke = service.getJokeRT();
         logger.info(joke);
-        assertTrue(joke.contains("Greg") || joke.contains("Turnquist"));
+        assertTrue(joke.contains("Chuck") || joke.contains("Norris"));
     }
 }
