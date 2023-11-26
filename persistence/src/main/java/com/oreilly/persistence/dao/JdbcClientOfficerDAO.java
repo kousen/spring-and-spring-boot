@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
@@ -18,19 +19,19 @@ import java.util.stream.Stream;
 
 @SuppressWarnings({"ConstantConditions", "SqlResolve", "SqlNoDataSourceInspection"})
 @Repository
-public class JdbcOfficerDAO implements OfficerDAO {
-    private final JdbcTemplate jdbcTemplate;
+public class JdbcClientOfficerDAO implements OfficerDAO {
+    private final JdbcClient jdbcClient;
     private final SimpleJdbcInsert insertOfficer;
 
     private final RowMapper<Officer> officerMapper =
-            (ResultSet rs, int rowNum) -> new Officer(rs.getInt("id"), // Java 8 lambda expression
+            (ResultSet rs, int rowNum) -> new Officer(rs.getInt("id"),
                     Rank.valueOf(rs.getString("rank")),
                     rs.getString("first_name"),
                     rs.getString("last_name"));
 
     @Autowired
-    public JdbcOfficerDAO(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public JdbcClientOfficerDAO(JdbcTemplate jdbcTemplate) {
+        this.jdbcClient = JdbcClient.create(jdbcTemplate);
         insertOfficer = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("officers")
                 .usingGeneratedKeyColumns("id");
@@ -47,10 +48,10 @@ public class JdbcOfficerDAO implements OfficerDAO {
     @Override
     public Optional<Officer> findById(Integer id) {
         try (Stream<Officer> stream =
-                     jdbcTemplate.queryForStream(
-                             "select * from officers where id=?",
-                             officerMapper,
-                             id)) {
+                     jdbcClient.sql("select * from officers where id=?")
+                             .param(id)
+                             .query(officerMapper)
+                             .stream()) {
             return stream.findAny();
         }
     }
@@ -59,20 +60,20 @@ public class JdbcOfficerDAO implements OfficerDAO {
     @SuppressWarnings("unused")
     public Optional<Officer> findById1(Integer id) {
         if (!existsById(id)) return Optional.empty();
-        return Optional.ofNullable(jdbcTemplate.queryForObject(
-                "SELECT * FROM officers WHERE id=?",
-                officerMapper,
-                id));
+        return jdbcClient.sql("SELECT * FROM officers WHERE id=?")
+                .param(id)
+                .query(officerMapper)
+                .optional();
     }
 
     // Alternative 2: catch the exception when row doesn't exist
     @SuppressWarnings("unused")
     public Optional<Officer> findById2(Integer id) {
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(
-                    "SELECT * FROM officers WHERE id=?",
-                    officerMapper,
-                    id));
+            return jdbcClient.sql("SELECT * FROM officers WHERE id=?")
+                    .param(id)
+                    .query(officerMapper)
+                    .optional();
         } catch (IncorrectResultSizeDataAccessException e) {
             return Optional.empty();
         }
@@ -80,22 +81,30 @@ public class JdbcOfficerDAO implements OfficerDAO {
 
     @Override
     public List<Officer> findAll() {
-        return jdbcTemplate.query("SELECT * FROM officers", officerMapper);
+        return jdbcClient.sql("SELECT * FROM officers")
+                .query(officerMapper)
+                .list();
     }
 
     @Override
     public long count() {
-        return jdbcTemplate.queryForObject("select count(*) from officers", Long.class);
+        return jdbcClient.sql("select count(*) from officers")
+                .query(Long.class)
+                .single();
     }
 
     @Override
     public void delete(Officer officer) {
-        jdbcTemplate.update("DELETE FROM officers WHERE id=?", officer.getId());
+        jdbcClient.sql("DELETE FROM officers WHERE id=?")
+                .param(officer.getId())
+                .update();
     }
 
     @Override
     public boolean existsById(Integer id) {
-        return jdbcTemplate.queryForObject(
-                "SELECT EXISTS(SELECT 1 FROM officers where id=?)", Boolean.class, id);
+        return jdbcClient.sql("SELECT EXISTS(SELECT 1 FROM officers where id=?)")
+                .param(id)
+                .query(Boolean.class)
+                .single();
     }
 }
