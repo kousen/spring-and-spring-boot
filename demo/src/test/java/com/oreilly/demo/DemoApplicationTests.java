@@ -3,13 +3,12 @@ package com.oreilly.demo;
 import com.oreilly.demo.json.Greeting;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 
+import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,9 +16,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class DemoApplicationTests {
 	@Autowired
 	private ApplicationContext context;
-
-	@Autowired @Qualifier("defaultGreeting")
-	private Greeting greeting;
 
 	@Test
 	void autowiringWorked() {
@@ -38,29 +34,21 @@ public class DemoApplicationTests {
 
 	@Test
 	void verifyHelloControllerIsInAppContext() {
-		List<String> beans = Arrays.stream(context.getBeanDefinitionNames())
-				.collect(Collectors.toList());
+		List<String> beans = Arrays.stream(context.getBeanDefinitionNames()).toList();
 		assertTrue(beans.contains("helloController"));
 	}
 
 	@Test
-	void verifyDefaultGreetingInAppCtx() {
-		Greeting greeting = context.getBean("defaultGreeting", Greeting.class);
-		assertNotNull(greeting);
+	void verifyNoDefaultGreetingInAppCtx() {
+		assertThrows(Exception.class, () -> context.getBean(Greeting.class));
 	}
 
 	@Test
 	void checkSingletonBehavior() {
-		Greeting greeting1 = context.getBean("defaultGreeting", Greeting.class);
-		Greeting greeting2 = context.getBean("defaultGreeting", Greeting.class);
+		NumberFormat nf1 = context.getBean("usCurrencyFormat", NumberFormat.class);
+		NumberFormat nf2 = context.getBean("usCurrencyFormat", NumberFormat.class);
 
-		// both references assigned to same instance
-		// By default, Spring manages singletons
-		assertSame(greeting1, greeting2);
-		System.out.println(greeting1.getMessage());
-		greeting1.setMessage("What up?");
-
-		System.out.println(greeting2.getMessage());
+		assertSame(nf1, nf2);
 	}
 
 }

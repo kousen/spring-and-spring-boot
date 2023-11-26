@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(HelloController.class)
-public class HelloControllerIntegrationTest {
+public class HelloControllerMockMVCTest {
     @Autowired  // Ask Spring for an instance of this class from the Application Context
     private MockMvc mvc;
 

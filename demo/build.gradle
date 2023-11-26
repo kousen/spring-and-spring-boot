@@ -1,11 +1,15 @@
 plugins {
-    id 'org.springframework.boot' version '2.7.12'
-    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'org.springframework.boot' version '3.2.0'
+    id 'io.spring.dependency-management' version '1.1.4'
     id 'java'
 }
 
 group = 'com.oreilly'
 version = '1.0'
+
+java {
+    sourceCompatibility = '17'
+}
 
 repositories {
     mavenCentral()
@@ -14,12 +18,17 @@ repositories {
 dependencies {
     implementation('org.springframework.boot:spring-boot-starter-thymeleaf')
     implementation('org.springframework.boot:spring-boot-starter-web')
+    implementation('org.springframework.boot:spring-boot-starter-webflux')
     implementation('org.springframework.boot:spring-boot-starter-aop')
     implementation('org.springframework.boot:spring-boot-devtools')
     testImplementation('org.springframework.boot:spring-boot-starter-test')
+
+    // Need this to remove Gradle 8.* warning
+    // (see https://docs.gradle.org/8.4/userguide/upgrading_version_8.html#test_framework_implementation_dependencies)
+    testRuntimeOnly('org.junit.platform:junit-platform-launcher')
 }
 
-test {
+tasks.named('test', Test) {
     useJUnitPlatform()
 }
 

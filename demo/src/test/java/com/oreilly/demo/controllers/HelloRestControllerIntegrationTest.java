@@ -21,13 +21,13 @@ public class HelloRestControllerIntegrationTest {
         assertEquals(MediaType.APPLICATION_JSON, entity.getHeaders().getContentType());
         Greeting response = entity.getBody();
         if (response != null) {
-            assertEquals("Hello, World!", response.getMessage());
+            assertEquals("Hello, World!", response.message());
         }
     }
 
     @Test
     public void greetWithName(@Autowired TestRestTemplate template) {
         Greeting response = template.getForObject("/rest?name=Dolly", Greeting.class);
-        assertEquals("Hello, Dolly!", response.getMessage());
+        assertEquals("Hello, Dolly!", response.message());
     }
 }

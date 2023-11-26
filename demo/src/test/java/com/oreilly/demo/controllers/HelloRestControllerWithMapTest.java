@@ -18,7 +18,7 @@ public class HelloRestControllerWithMapTest {
     public void greetWithName(@Autowired TestRestTemplate template) {
         template.postForEntity("/restwithmap/{name}", null, Greeting.class, "Dolly");
         Greeting response = template.getForObject("/restwithmap?name=Dolly", Greeting.class);
-        assertEquals("Hello, Dolly!", response.getMessage());
+        assertEquals("Hello, Dolly!", response.message());
     }
 
     @Test
@@ -28,7 +28,7 @@ public class HelloRestControllerWithMapTest {
         assertEquals(MediaType.APPLICATION_JSON, entity.getHeaders().getContentType());
         Greeting response = entity.getBody();
         if (response != null) {
-            assertEquals("Hello, World!", response.getMessage());
+            assertEquals("Hello, World!", response.message());
         }
     }
 
