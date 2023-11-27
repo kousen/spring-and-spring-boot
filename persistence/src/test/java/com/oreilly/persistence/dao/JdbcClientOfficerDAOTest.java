@@ -6,12 +6,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,6 +22,15 @@ public class JdbcClientOfficerDAOTest {
     @Qualifier("jdbcClientOfficerDAO")
     @Autowired
     private OfficerDAO dao;
+
+    @Autowired
+    private JdbcClient jdbcClient;
+
+    private List<Integer> getIds() {
+        return jdbcClient.sql("select id from officers")
+                         .query(Integer.class)
+                         .list();
+    }
 
     @Test
     public void save() {
@@ -58,8 +67,7 @@ public class JdbcClientOfficerDAOTest {
 
     @Test
     public void delete() {
-        IntStream.rangeClosed(1, 5)
-                 .forEach(id -> {
+        getIds().forEach(id -> {
                      Optional<Officer> officer = dao.findById(id);
                      assertTrue(officer.isPresent());
                      dao.delete(officer.get());
@@ -69,7 +77,6 @@ public class JdbcClientOfficerDAOTest {
 
     @Test
     public void existsById() {
-        IntStream.rangeClosed(1, 5)
-                 .forEach(id -> assertTrue(dao.existsById(id)));
+        getIds().forEach(id -> assertTrue(dao.existsById(id)));
     }
 }
