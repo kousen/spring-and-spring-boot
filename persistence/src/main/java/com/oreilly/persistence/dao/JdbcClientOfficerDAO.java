@@ -1,18 +1,15 @@
 package com.oreilly.persistence.dao;
 
 import com.oreilly.persistence.entities.Officer;
-import com.oreilly.persistence.entities.Rank;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
-import java.sql.ResultSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -23,15 +20,9 @@ public class JdbcClientOfficerDAO implements OfficerDAO {
     private final JdbcClient jdbcClient;
     private final SimpleJdbcInsert insertOfficer;
 
-    private final RowMapper<Officer> officerMapper =
-            (ResultSet rs, int rowNum) -> new Officer(rs.getInt("id"),
-                    Rank.valueOf(rs.getString("rank")),
-                    rs.getString("first_name"),
-                    rs.getString("last_name"));
-
     @Autowired
-    public JdbcClientOfficerDAO(JdbcTemplate jdbcTemplate) {
-        this.jdbcClient = JdbcClient.create(jdbcTemplate);
+    public JdbcClientOfficerDAO(JdbcTemplate jdbcTemplate, JdbcClient jdbcClient) {
+        this.jdbcClient = jdbcClient;
         insertOfficer = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("officers")
                 .usingGeneratedKeyColumns("id");
@@ -50,7 +41,7 @@ public class JdbcClientOfficerDAO implements OfficerDAO {
         try (Stream<Officer> stream =
                      jdbcClient.sql("select * from officers where id=?")
                              .param(id)
-                             .query(officerMapper)
+                             .query(Officer.class)
                              .stream()) {
             return stream.findAny();
         }
@@ -62,7 +53,7 @@ public class JdbcClientOfficerDAO implements OfficerDAO {
         if (!existsById(id)) return Optional.empty();
         return jdbcClient.sql("SELECT * FROM officers WHERE id=?")
                 .param(id)
-                .query(officerMapper)
+                .query(Officer.class)
                 .optional();
     }
 
@@ -72,7 +63,7 @@ public class JdbcClientOfficerDAO implements OfficerDAO {
         try {
             return jdbcClient.sql("SELECT * FROM officers WHERE id=?")
                     .param(id)
-                    .query(officerMapper)
+                    .query(Officer.class)
                     .optional();
         } catch (IncorrectResultSizeDataAccessException e) {
             return Optional.empty();
@@ -82,7 +73,7 @@ public class JdbcClientOfficerDAO implements OfficerDAO {
     @Override
     public List<Officer> findAll() {
         return jdbcClient.sql("SELECT * FROM officers")
-                .query(officerMapper)
+                .query(Officer.class)
                 .list();
     }
 
