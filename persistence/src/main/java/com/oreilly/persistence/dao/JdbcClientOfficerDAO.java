@@ -2,7 +2,6 @@ package com.oreilly.persistence.dao;
 
 import com.oreilly.persistence.entities.Officer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 @SuppressWarnings({"ConstantConditions", "SqlResolve", "SqlNoDataSourceInspection"})
 @Repository
@@ -38,36 +36,10 @@ public class JdbcClientOfficerDAO implements OfficerDAO {
 
     @Override
     public Optional<Officer> findById(Integer id) {
-        try (Stream<Officer> stream =
-                     jdbcClient.sql("select * from officers where id=?")
-                             .param(id)
-                             .query(Officer.class)
-                             .stream()) {
-            return stream.findAny();
-        }
-    }
-
-    // Alternative 1: extra SQL call to verify row exists
-    @SuppressWarnings("unused")
-    public Optional<Officer> findById1(Integer id) {
-        if (!existsById(id)) return Optional.empty();
-        return jdbcClient.sql("SELECT * FROM officers WHERE id=?")
+        return jdbcClient.sql("select * from officers where id=?")
                 .param(id)
                 .query(Officer.class)
                 .optional();
-    }
-
-    // Alternative 2: catch the exception when row doesn't exist
-    @SuppressWarnings("unused")
-    public Optional<Officer> findById2(Integer id) {
-        try {
-            return jdbcClient.sql("SELECT * FROM officers WHERE id=?")
-                    .param(id)
-                    .query(Officer.class)
-                    .optional();
-        } catch (IncorrectResultSizeDataAccessException e) {
-            return Optional.empty();
-        }
     }
 
     @Override
