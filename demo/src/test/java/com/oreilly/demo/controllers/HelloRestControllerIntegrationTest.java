@@ -20,9 +20,8 @@ public class HelloRestControllerIntegrationTest {
         assertEquals(HttpStatus.OK, entity.getStatusCode());
         assertEquals(MediaType.APPLICATION_JSON, entity.getHeaders().getContentType());
         Greeting response = entity.getBody();
-        if (response != null) {
-            assertEquals("Hello, World!", response.message());
-        }
+        assert response != null;
+        assertEquals("Hello, World!", response.message());
     }
 
     @Test

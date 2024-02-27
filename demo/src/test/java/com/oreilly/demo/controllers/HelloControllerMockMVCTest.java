@@ -24,17 +24,21 @@ public class HelloControllerMockMVCTest {
     @Test
     public void testHelloWithoutName() throws Exception {
         mvc.perform(get("/hello").accept(MediaType.TEXT_HTML))
-           .andExpect(status().isOk())
-           .andExpect(view().name("welcome"))
-           .andExpect(model().attribute("user", is("World")));
-
+                .andExpectAll(
+                        status().isOk(),
+                        view().name("welcome"),
+                        model().attribute("user", is("World"))
+                );
     }
 
     @Test
     public void testHelloWithName() throws Exception {
-        mvc.perform(get("/hello").param("name", "Dolly").accept(MediaType.TEXT_HTML))
-           .andExpect(status().isOk())
-           .andExpect(view().name("welcome"))
-           .andExpect(model().attribute("user", is("Dolly")));
+        mvc.perform(get("/hello").param("name", "Dolly")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpectAll(
+                        status().isOk(),
+                        view().name("welcome"),
+                        model().attribute("user", is("Dolly"))
+                );
     }
 }
