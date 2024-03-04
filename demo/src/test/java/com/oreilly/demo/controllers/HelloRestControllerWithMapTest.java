@@ -33,7 +33,7 @@ public class HelloRestControllerWithMapTest {
     }
 
     @Test
-    public void greetWithInvalidName(@Autowired TestRestTemplate template) {
+    public void greetWithNameDoesNotExist(@Autowired TestRestTemplate template) {
         ResponseEntity<Greeting> entity = template.getForEntity("/restwithmap?name=abc", Greeting.class);
         assertEquals(HttpStatus.NOT_FOUND, entity.getStatusCode());
     }
