@@ -2,13 +2,13 @@ package com.oreilly.persistence.dao;
 
 import com.oreilly.persistence.entities.Officer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
+import javax.sql.DataSource;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,9 +19,9 @@ public class JdbcClientOfficerDAO implements OfficerDAO {
     private final SimpleJdbcInsert insertOfficer;
 
     @Autowired
-    public JdbcClientOfficerDAO(JdbcTemplate jdbcTemplate, JdbcClient jdbcClient) {
+    public JdbcClientOfficerDAO(DataSource dataSource, JdbcClient jdbcClient) {
         this.jdbcClient = jdbcClient;
-        insertOfficer = new SimpleJdbcInsert(jdbcTemplate)
+        insertOfficer = new SimpleJdbcInsert(dataSource)
                 .withTableName("officers")
                 .usingGeneratedKeyColumns("id");
     }

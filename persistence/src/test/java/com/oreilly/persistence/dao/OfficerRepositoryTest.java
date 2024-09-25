@@ -47,8 +47,7 @@ public class OfficerRepositoryTest {
 
     @Test
     public void findAll() {
-        List<String> dbNames = repository.findAll()
-                .stream()
+        List<String> dbNames = repository.findAll().stream()
                 .map(Officer::getLastName)
                 .collect(Collectors.toList());
         assertThat(dbNames).contains("Kirk", "Picard", "Sisko", "Janeway", "Archer");
@@ -67,8 +66,7 @@ public class OfficerRepositoryTest {
 
     @Test
     public void existsById() {
-        template.query("select id from officers", (rs, num) -> rs.getInt("id"))
-                .forEach(id -> assertTrue(repository.existsById(id)));
+        getIds().forEach(id -> assertTrue(repository.existsById(id)));
     }
 
     @Test
