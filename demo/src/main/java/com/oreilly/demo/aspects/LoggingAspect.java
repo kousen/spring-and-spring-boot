@@ -17,7 +17,7 @@ public class LoggingAspect {
     // Only available pointcuts are public methods on Spring-managed beans
     @Before("execution(* com.oreilly.demo.*.*.*(..))")
     public void logMethodCalls(JoinPoint joinPoint) {
-        logger.info("Entering  " + joinPoint.getSignature());
-        logger.info("with args " + Arrays.toString(joinPoint.getArgs()));
+        logger.info("Entering  {}", joinPoint.getSignature());
+        logger.info("with args {}", Arrays.toString(joinPoint.getArgs()));
     }
 }

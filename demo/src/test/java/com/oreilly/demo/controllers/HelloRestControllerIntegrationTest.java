@@ -29,4 +29,15 @@ public class HelloRestControllerIntegrationTest {
         Greeting response = template.getForObject("/rest?name=Dolly", Greeting.class);
         assertEquals("Hello, Dolly!", response.message());
     }
+
+    @Test
+    void postGreeting(@Autowired TestRestTemplate template) {
+        Greeting input = new Greeting("Hello, World!");
+        ResponseEntity<Greeting> entity = template.postForEntity("/rest", input, Greeting.class);
+        assertEquals(HttpStatus.CREATED, entity.getStatusCode());
+        assertEquals(MediaType.APPLICATION_JSON, entity.getHeaders().getContentType());
+        Greeting response = entity.getBody();
+        assert response != null;
+        assertEquals("HELLO, WORLD!", response.message());
+    }
 }
