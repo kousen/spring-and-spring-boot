@@ -9,7 +9,9 @@
       "Bash(./gradlew build:*)",
       "Bash(ls:*)",
       "Bash(git add:*)",
-      "Bash(./gradlew test:*)"
+      "Bash(./gradlew test:*)",
+      "WebFetch(domain:github.com)",
+      "mcp__docker-mcp__get_file_contents"
     ],
     "deny": []
   }
