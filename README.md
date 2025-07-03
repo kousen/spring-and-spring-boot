@@ -86,6 +86,8 @@ cd persistence && ./gradlew test
 - **Text blocks** for readable SQL and JSON
 - **RestClient** as the modern replacement for RestTemplate
 - **JdbcClient** as the modern alternative to JdbcTemplate
+- **Configuration with @Value** for externalized properties
+- **Spring Profiles** for environment-specific configuration
 
 ### Web Development
 - RESTful web services with `@RestController`
@@ -94,23 +96,33 @@ cd persistence && ./gradlew test
 - HTTP client integration patterns
 
 ### Data Access
-- JDBC with modern Spring abstractions
-- JPA entity mapping and relationships
-- Repository pattern with Spring Data
-- Database migration and initialization
+- **Modern JDBC**: JdbcClient and JdbcTemplate patterns
+- **JPA Entity Mapping**: Annotations and relationship management
+- **Spring Data JPA**: Repository pattern with automatic query generation
+- **Database Configuration**: Multi-environment setup with profiles
+- **Connection Management**: H2 for development, PostgreSQL for production
+
+### Configuration Management
+- **Property Injection**: `@Value` annotation for external configuration
+- **Profile-Specific Properties**: `application-{profile}.yml` files
+- **Environment Variables**: Secure configuration for production
+- **Feature Toggles**: Profile-based conditional bean creation
 
 ### Testing
-- Unit testing with JUnit 5
-- Integration testing with `@SpringBootTest`
-- MockMVC for web layer testing
-- Reactive testing with `StepVerifier`
+- **Unit Testing**: JUnit 5 with comprehensive assertions
+- **Integration Testing**: `@SpringBootTest` with profile activation
+- **Web Layer Testing**: MockMVC for REST API testing
+- **Reactive Testing**: `StepVerifier` for WebClient flows
+- **Database Testing**: Testcontainers for realistic database scenarios
+- **Profile Testing**: `@ActiveProfiles` for environment-specific tests
 
 ## API Integrations
 
 ### JSON Placeholder (No API Key Required)
-- **Users API**: Complex nested JSON structures
-- **Posts API**: Simple CRUD operations
-- **Demonstrates**: Modern record classes, error handling, both sync/async patterns
+- **Users API**: Complex nested JSON structures with address and company data
+- **Posts API**: Complete CRUD operations (GET, POST, DELETE)
+- **Configuration**: Externalized URLs and timeouts with `@Value` annotation
+- **Demonstrates**: Modern record classes, full HTTP method support, sync/async patterns, robust error handling
 
 ### NASA Open Data
 - **Astronauts in Space**: Real-time space station crew data
@@ -124,11 +136,27 @@ cd persistence && ./gradlew test
 - **VS Code** - With Spring Boot extensions
 
 ### Database Access
-When running the persistence project, access the H2 console at:
-- **URL**: http://localhost:8080/h2-console
-- **JDBC URL**: `jdbc:h2:mem:testdb`
+
+**Development Profile (default):**
+- **H2 Console**: http://localhost:8080/h2-console
+- **JDBC URL**: `jdbc:h2:mem:devdb`
 - **Username**: `sa`
 - **Password**: (empty)
+
+**Profile Switching:**
+```bash
+# Run with different profiles
+./gradlew bootRun --args='--spring.profiles.active=dev'    # H2 (default)
+./gradlew bootRun --args='--spring.profiles.active=test'   # H2 optimized for testing
+./gradlew bootRun --args='--spring.profiles.active=prod'   # PostgreSQL via Testcontainers
+```
+
+### Optional Requirements
+
+**Docker Desktop (for advanced testing):**
+- Required for PostgreSQL Testcontainers integration
+- Production profile tests will be skipped if Docker is unavailable
+- All core functionality works without Docker using H2 database
 
 ## Modern Java Features Used
 

@@ -75,9 +75,17 @@ cd persistence && ./gradlew bootRun
 
 # Run with specific profile
 ./gradlew bootRun --args='--spring.profiles.active=dev'
+./gradlew bootRun --args='--spring.profiles.active=test'
+./gradlew bootRun --args='--spring.profiles.active=prod'
+
+# Run with multiple profiles
+./gradlew bootRun --args='--spring.profiles.active=dev,debug'
 
 # Run with JVM options
 ./gradlew bootRun --args='--server.port=8081'
+
+# Run with environment variables
+SPRING_PROFILES_ACTIVE=prod ./gradlew bootRun
 ```
 
 ### Development Commands
@@ -214,14 +222,23 @@ kill -9 $(lsof -ti:8080)
 ### JSON Placeholder API (No Auth Required)
 
 ```bash
-# Test users endpoint
+# GET requests
 curl https://jsonplaceholder.typicode.com/users
-
-# Test specific user
 curl https://jsonplaceholder.typicode.com/users/1
-
-# Test user posts
 curl https://jsonplaceholder.typicode.com/users/1/posts
+
+# POST requests
+curl -X POST https://jsonplaceholder.typicode.com/posts \
+     -H "Content-Type: application/json" \
+     -d '{"userId": 1, "title": "Test Post", "body": "This is a test post"}'
+
+curl -X POST https://jsonplaceholder.typicode.com/users \
+     -H "Content-Type: application/json" \
+     -d '{"name": "John Doe", "email": "john@example.com"}'
+
+# DELETE requests
+curl -X DELETE https://jsonplaceholder.typicode.com/posts/1
+curl -X DELETE https://jsonplaceholder.typicode.com/users/1
 ```
 
 ### NASA Open Data API

@@ -21,6 +21,7 @@ This document contains hands-on exercises for learning Spring Boot fundamentals,
 6. [Using the JDBC Template](#using-the-jdbc-template)
 7. [Using the JDBC Client (Spring Boot 3.2+)](#using-the-jdbc-client-spring-boot-32)
 8. [Using JPA entities and Spring Data JPA](#using-jpa-entities-and-spring-data-jpa)
+9. [Spring Profiles for Environment-Specific Configuration](#spring-profiles-for-environment-specific-configuration)
 
 ## Creating a New Project
 
@@ -624,14 +625,75 @@ void getAstroResponseFromInterface(@Autowired AstroInterface astroInterface) {
 
 ## Consuming External APIs
 
-This exercise demonstrates how to consume external RESTful APIs using both `RestClient` and `WebClient`. We'll use the JSON Placeholder API (https://jsonplaceholder.typicode.com/), a free testing service designed for prototyping and learning.
+This exercise demonstrates how to consume external RESTful APIs using both `RestClient` and `WebClient`. We'll use the JSON Placeholder API (https://jsonplaceholder.typicode.com/), a free testing service designed for prototyping and learning. Additionally, this exercise will demonstrate the `@Value` annotation for injecting configuration properties.
 
 > [!NOTE]
 > JSON Placeholder provides realistic fake data with endpoints for posts, comments, albums, photos, todos, and users. It's perfect for learning API consumption without API keys or quotas.
 
-1. Rather than creating a new project, we'll add services to the existing `restclient` project. The JSON Placeholder API provides several endpoints, but we'll focus on `/users` and `/posts` as they demonstrate different patterns.
+### Step 1: Configure Properties with @Value
 
-2. First, let's examine the JSON structure. A typical user response from `https://jsonplaceholder.typicode.com/users/1` looks like:
+1. Rather than creating a new project, we'll add services to the existing `restclient` project. First, let's add configuration properties to `src/main/resources/application.properties`:
+
+```properties
+# API Configuration using @Value annotation examples
+api.jsonplaceholder.base-url=https://jsonplaceholder.typicode.com
+api.jsonplaceholder.timeout=5000
+api.nasa.astros-url=http://api.open-notify.org/astros.json
+api.nasa.timeout=10000
+
+# Application Information
+app.name=REST Client Demo
+app.version=1.0.0
+app.description=Demonstrates RestClient and WebClient with external APIs
+```
+
+2. Create a configuration class to demonstrate various `@Value` usage patterns in `com.kousenit.restclient.config.ApiConfig`:
+
+```java
+@Configuration
+public class ApiConfig {
+    
+    // Inject values from application.properties
+    @Value("${app.name}")
+    private String applicationName;
+    
+    @Value("${app.version}")
+    private String applicationVersion;
+    
+    @Value("${app.description}")
+    private String applicationDescription;
+    
+    // Inject system properties with defaults
+    @Value("${java.version:unknown}")
+    private String javaVersion;
+    
+    @Value("${user.name:anonymous}")
+    private String userName;
+    
+    // Environment variable with default
+    @Value("${HOME:unknown}")
+    private String homeDirectory;
+    
+    // Getter methods and utility method
+    public String getApplicationInfo() {
+        return String.format("%s v%s - %s (Java %s, User: %s)", 
+                applicationName, applicationVersion, applicationDescription, 
+                javaVersion, userName);
+    }
+    
+    // ... other getters ...
+}
+```
+
+**Key `@Value` patterns demonstrated:**
+- `@Value("${property.name}")`: Inject from application.properties
+- `@Value("${property.name:default}")`: Inject with default value if not found
+- System properties: `${java.version}`, `${user.name}`
+- Environment variables: `${HOME}`
+
+### Step 2: Create Domain Classes and Service
+
+3. First, let's examine the JSON structure. A typical user response from `https://jsonplaceholder.typicode.com/users/1` looks like:
 
    ```json
    {
@@ -714,22 +776,51 @@ This exercise demonstrates how to consume external RESTful APIs using both `Rest
    ) {}
    ```
 
-5. Create a service called `JsonPlaceholderService` in the `com.kousenit.restclient.services` package:
+5. Create a service called `JsonPlaceholderService` that demonstrates `@Value` injection in the `com.kousenit.restclient.services` package:
 
    ```java
    @Service
    public class JsonPlaceholderService {
        private final RestClient restClient;
        private final WebClient webClient;
+       private final String baseUrl;
+       private final int timeoutMs;
 
-       public JsonPlaceholderService() {
-           this.restClient = RestClient.create("https://jsonplaceholder.typicode.com");
-           this.webClient = WebClient.create("https://jsonplaceholder.typicode.com");
+       public JsonPlaceholderService(
+               @Value("${api.jsonplaceholder.base-url}") String baseUrl,
+               @Value("${api.jsonplaceholder.timeout:5000}") int timeoutMs) {
+           
+           this.baseUrl = baseUrl;
+           this.timeoutMs = timeoutMs;
+           
+           // Configure RestClient with injected base URL
+           this.restClient = RestClient.builder()
+                   .baseUrl(baseUrl)
+                   .build();
+           
+           // Configure WebClient with injected base URL and timeout
+           HttpClient httpClient = HttpClient.create()
+                   .responseTimeout(Duration.ofMillis(timeoutMs));
+           
+           this.webClient = WebClient.builder()
+                   .baseUrl(baseUrl)
+                   .clientConnector(new ReactorClientHttpConnector(httpClient))
+                   .build();
        }
+       
+       // Getter methods to verify @Value injection
+       public String getBaseUrl() { return baseUrl; }
+       public int getTimeoutMs() { return timeoutMs; }
 
        // ... methods to come
    }
    ```
+
+   **Key points about `@Value` usage:**
+   - `@Value("${api.jsonplaceholder.base-url}")`: Injects property value (required)
+   - `@Value("${api.jsonplaceholder.timeout:5000}")`: Injects with default value
+   - Constructor injection allows final fields and testability
+   - Configuration is externalized and environment-specific
 
 6. Add synchronous methods using `RestClient`:
 
@@ -1109,6 +1200,16 @@ This exercise demonstrates how to consume external RESTful APIs using both `Rest
            }
        }
 
+       @Test
+       void testValueInjection() {
+           // Test that @Value annotations are working correctly
+           assertEquals("https://jsonplaceholder.typicode.com", service.getBaseUrl());
+           assertEquals(5000, service.getTimeoutMs());
+           
+           logger.info("Base URL from @Value: {}", service.getBaseUrl());
+           logger.info("Timeout from @Value: {}ms", service.getTimeoutMs());
+       }
+
        private User createTestUser() {
            Geo geo = new Geo("-37.3159", "81.1496");
            Address address = new Address("123 Test St", "Test Suite", "Testville", "12345", geo);
@@ -1130,13 +1231,54 @@ This exercise demonstrates how to consume external RESTful APIs using both `Rest
     import org.slf4j.LoggerFactory;
     ```
 
-11. Run the tests to verify the integration works correctly. All tests should pass, demonstrating successful API consumption.
+11. Create a test for the configuration class `ApiConfigTest`:
+
+    ```java
+    @SpringBootTest
+    class ApiConfigTest {
+        private final Logger logger = LoggerFactory.getLogger(ApiConfigTest.class);
+
+        @Autowired
+        private ApiConfig apiConfig;
+
+        @Test
+        void testApplicationPropertiesInjection() {
+            // Test @Value injection from application.properties
+            assertEquals("REST Client Demo", apiConfig.getApplicationName());
+            assertEquals("1.0.0", apiConfig.getApplicationVersion());
+            
+            logger.info("Application Info: {}", apiConfig.getApplicationInfo());
+        }
+
+        @Test
+        void testSystemPropertyInjection() {
+            // Test @Value injection of system properties
+            assertNotNull(apiConfig.getJavaVersion());
+            assertNotEquals("unknown", apiConfig.getJavaVersion());
+            
+            logger.info("Java Version from system property: {}", apiConfig.getJavaVersion());
+        }
+
+        @Test
+        void testEnvironmentVariableInjection() {
+            // Test @Value injection of environment variables
+            assertNotNull(apiConfig.getHomeDirectory());
+            
+            logger.info("Home Directory from environment variable: {}", apiConfig.getHomeDirectory());
+        }
+    }
+    ```
+
+12. Run the tests to verify the integration works correctly. All tests should pass, demonstrating successful API consumption and configuration injection.
 
 ## Key Learning Points
 
 This exercise demonstrates several important concepts:
 
 - **No API Keys Required**: JSON Placeholder removes authentication complexity
+- **Configuration with @Value**: Injecting properties from application.properties and system environment
+- **Default Values**: Using `@Value("${property:default}")` for optional configuration
+- **Externalized Configuration**: Separating configuration from code for different environments
 - **Nested JSON Mapping**: Records handle complex nested structures elegantly  
 - **Path Parameters**: Using `{id}` placeholders in URIs
 - **Error Handling**: Graceful handling of non-existent resources
@@ -1960,5 +2102,384 @@ This exercise demonstrates several important concepts:
 
 > [!TIP]
 > This approach represents modern Spring Boot development: focus on domain modeling with JPA entities, then leverage Spring Data JPA for data access. Manual JPA DAO implementations are rarely needed in practice.
+
+[Back to Table of Contents](#table-of-contents)
+
+## Spring Profiles for Environment-Specific Configuration
+
+Spring profiles provide a powerful way to configure your application differently for various environments (development, testing, production). This exercise demonstrates how to use profiles to switch between different database configurations and environment-specific settings.
+
+> [!NOTE]
+> This exercise builds on the persistence project and shows how to configure different databases for different environments using Spring profiles and optionally Docker with Testcontainers.
+
+### Overview of Spring Profiles
+
+Spring profiles allow you to:
+- **Segregate configuration** for different environments
+- **Conditionally create beans** based on active profiles  
+- **Override properties** per environment
+- **Group related configuration** together
+
+### Step 1: Update Dependencies
+
+First, add Testcontainers support to `build.gradle` for advanced database testing:
+
+```groovy
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.data:spring-data-rest-hal-explorer'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    
+    // Database drivers
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'org.postgresql:postgresql'
+    
+    // Testing dependencies (optional - requires Docker)
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testRuntimeOnly('org.junit.platform:junit-platform-launcher')
+}
+```
+
+### Step 2: Configure Profile-Specific Properties
+
+Create profile-specific configuration files:
+
+**1. Update `application.yml` (base configuration):**
+
+```yaml
+spring:
+  profiles:
+    active: dev  # Default to dev profile
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate.format_sql: true
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+
+logging:
+  level:
+    sql: debug
+    org.springframework.boot.autoconfigure.jdbc: debug
+
+# Application information
+app:
+  name: Spring Data JPA Persistence Demo
+  environment: ${spring.profiles.active:default}
+```
+
+**2. Create `application-dev.yml` (development profile):**
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:h2:mem:devdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+logging:
+  level:
+    com.kousenit.persistence: debug
+    org.hibernate.SQL: debug
+
+# Development specific settings
+app:
+  description: "Development environment with H2 in-memory database"
+  features:
+    h2-console: true
+    sql-logging: true
+```
+
+**3. Create `application-test.yml` (testing profile):**
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false  # Reduce noise in tests
+  h2:
+    console:
+      enabled: false  # Not needed in tests
+
+logging:
+  level:
+    com.kousenit.persistence: info
+    org.hibernate.SQL: warn
+
+# Test specific settings
+app:
+  description: "Test environment with H2 in-memory database"
+  features:
+    h2-console: false
+    sql-logging: false
+```
+
+**4. Create `application-prod.yml` (production profile):**
+
+```yaml
+spring:
+  datasource:
+    # These will be overridden by Testcontainers in tests
+    # In real production, these would come from environment variables
+    url: jdbc:postgresql://localhost:5432/officers_db
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # For testing with Testcontainers
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    properties:
+      hibernate.jdbc.lob.non_contextual_creation: true
+  h2:
+    console:
+      enabled: false  # No H2 console in production
+
+logging:
+  level:
+    com.kousenit.persistence: info
+    org.hibernate.SQL: warn
+
+# Production specific settings
+app:
+  description: "Production environment with PostgreSQL database"
+  features:
+    h2-console: false
+    sql-logging: false
+    connection-pooling: true
+```
+
+### Step 3: Create Profile-Aware Configuration Class
+
+Create a configuration class that demonstrates `@Profile` annotation usage:
+
+```java
+@Configuration
+public class ProfileConfig {
+    private static final Logger logger = LoggerFactory.getLogger(ProfileConfig.class);
+
+    @Value("${app.name}")
+    private String appName;
+
+    @Value("${app.environment}")
+    private String environment;
+
+    @Value("${app.description}")
+    private String description;
+
+    /**
+     * Bean that's only active in development profile
+     */
+    @Bean
+    @Profile("dev")
+    public DatabaseInfo developmentDatabaseInfo() {
+        logger.info("Creating development database info bean");
+        return new DatabaseInfo("H2", "In-Memory", "Development", true);
+    }
+
+    /**
+     * Bean that's only active in test profile
+     */
+    @Bean
+    @Profile("test")
+    public DatabaseInfo testDatabaseInfo() {
+        logger.info("Creating test database info bean");
+        return new DatabaseInfo("H2", "In-Memory", "Testing", false);
+    }
+
+    /**
+     * Bean that's only active in production profile
+     */
+    @Bean
+    @Profile("prod")
+    public DatabaseInfo productionDatabaseInfo() {
+        logger.info("Creating production database info bean");
+        return new DatabaseInfo("PostgreSQL", "Docker Container", "Production", false);
+    }
+
+    /**
+     * Bean that's active in development OR test profiles
+     */
+    @Bean
+    @Profile({"dev", "test"})
+    public FeatureToggle h2ConsoleFeature() {
+        logger.info("Enabling H2 console feature for dev/test profiles");
+        return new FeatureToggle("h2-console", true);
+    }
+
+    /**
+     * Bean that's NOT active in production (using ! prefix)
+     */
+    @Bean
+    @Profile("!prod")
+    public FeatureToggle debugFeature() {
+        logger.info("Enabling debug features for non-production environments");
+        return new FeatureToggle("debug-logging", true);
+    }
+
+    // ... inner classes for DatabaseInfo, FeatureToggle, ApplicationInfo
+}
+```
+
+**Key `@Profile` patterns:**
+- `@Profile("dev")`: Only active when 'dev' profile is active
+- `@Profile({"dev", "test"})`: Active when either 'dev' OR 'test' profile is active
+- `@Profile("!prod")`: Active when 'prod' profile is NOT active
+
+### Step 4: Create Profile-Specific Tests
+
+Create tests that demonstrate different profile configurations:
+
+**1. Development Profile Test:**
+
+```java
+@SpringBootTest
+@ActiveProfiles("dev")
+class DevProfileTest {
+    @Autowired
+    private DatabaseInfo databaseInfo;
+
+    @Autowired
+    private ApplicationInfo applicationInfo;
+
+    @Test
+    void testDevProfileConfiguration() {
+        assertEquals("H2", databaseInfo.getType());
+        assertEquals("Development", databaseInfo.getPurpose());
+        assertTrue(databaseInfo.isConsoleEnabled());
+        assertEquals("dev", applicationInfo.getEnvironment());
+    }
+}
+```
+
+**2. Production Profile Test (Optional - Requires Docker):**
+
+```java
+@SpringBootTest
+@ActiveProfiles("prod")
+@Testcontainers
+class ProdProfileTest {
+    
+    @Container
+    @ServiceConnection
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("officers_db")
+            .withUsername("test_user")
+            .withPassword("test_password");
+
+    @Autowired
+    private OfficerRepository repository;
+
+    @BeforeAll
+    static void checkDockerAvailability() {
+        boolean dockerAvailable = DockerClientFactory.instance().isDockerAvailable();
+        assumeTrue(dockerAvailable, "Docker is not available - skipping Testcontainers tests");
+    }
+
+    @Test
+    void testPostgreSQLIntegration() {
+        assertTrue(postgres.isRunning());
+        
+        Officer officer = new Officer(Rank.CAPTAIN, "Jean-Luc", "Picard");
+        Officer saved = repository.save(officer);
+        
+        assertNotNull(saved.getId());
+        // Clean up
+        repository.delete(saved);
+    }
+}
+```
+
+### Step 5: Running with Different Profiles
+
+**Command Line Activation:**
+
+```bash
+# Run with dev profile (default)
+./gradlew bootRun
+
+# Run with test profile
+./gradlew bootRun --args='--spring.profiles.active=test'
+
+# Run with production profile
+./gradlew bootRun --args='--spring.profiles.active=prod'
+
+# Run with multiple profiles
+./gradlew bootRun --args='--spring.profiles.active=dev,debug'
+```
+
+**Environment Variable:**
+
+```bash
+export SPRING_PROFILES_ACTIVE=prod
+./gradlew bootRun
+```
+
+**IDE Configuration:**
+- IntelliJ: Run Configuration → Environment Variables → `SPRING_PROFILES_ACTIVE=dev`
+- VS Code: launch.json → `"env": {"SPRING_PROFILES_ACTIVE": "dev"}`
+
+### Step 6: Testing Different Profiles
+
+```bash
+# Test development profile
+./gradlew test --tests DevProfileTest
+
+# Test production profile (requires Docker)
+./gradlew test --tests ProdProfileTest
+
+# Run all tests
+./gradlew test
+```
+
+## Key Learning Points
+
+This exercise demonstrates several important concepts:
+
+- **Environment Separation**: Different configurations for dev/test/prod environments
+- **Conditional Bean Creation**: Using `@Profile` to create environment-specific beans
+- **Property Overrides**: Profile-specific `application-{profile}.yml` files
+- **External Configuration**: Using environment variables for sensitive data
+- **Modern Testing**: Testcontainers for realistic database testing
+- **Graceful Degradation**: Optional Docker requirements with assumption-based tests
+
+### Profile Best Practices
+
+- **Default Profile**: Always specify a sensible default (`spring.profiles.active=dev`)
+- **Property Hierarchy**: Base properties in `application.yml`, overrides in profile-specific files
+- **Environment Variables**: Use `${VAR_NAME:default}` for environment-specific values
+- **Security**: Never commit production credentials to version control
+- **Testing**: Use `@ActiveProfiles` to test profile-specific behavior
+
+> [!TIP]
+> Profiles are essential for professional Spring Boot applications. They enable you to maintain a single codebase while supporting multiple deployment environments with different configurations.
+
+> [!WARNING]
+> The Testcontainers examples require Docker Desktop to be installed and running. If Docker is not available, those tests will be skipped automatically using JUnit's `assumeTrue()`.
 
 [Back to Table of Contents](#table-of-contents)
