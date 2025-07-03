@@ -1,9 +1,22 @@
 spring:
-    jpa:
-        hibernate:
-            ddl-auto: update
-        properties:
-            hibernate.format_sql: true
+  profiles:
+    active: dev  # Default to dev profile
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate.format_sql: true
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+
 logging:
-    level:
-        sql: debug
+  level:
+    sql: debug
+    org.springframework.boot.autoconfigure.jdbc: debug
+
+# Application information
+app:
+  name: Spring Data JPA Persistence Demo
+  environment: ${spring.profiles.active:default}

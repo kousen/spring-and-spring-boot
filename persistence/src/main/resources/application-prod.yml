@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    # These will be overridden by Testcontainers in tests
+    # In real production, these would come from environment variables
+    url: jdbc:postgresql://localhost:5432/officers_db
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # For testing with Testcontainers
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    properties:
+      hibernate.jdbc.lob.non_contextual_creation: true
+  h2:
+    console:
+      enabled: false  # No H2 console in production
+
+logging:
+  level:
+    com.kousenit.persistence: info
+    org.hibernate.SQL: warn
+    org.springframework.boot.autoconfigure.jdbc: info
+
+# Production specific settings
+app:
+  description: "Production environment with PostgreSQL database"
+  features:
+    h2-console: false
+    sql-logging: false
+    connection-pooling: true
