@@ -242,6 +242,16 @@ class JsonPlaceholderServiceTest {
         }
     }
 
+    @Test
+    void testValueInjection() {
+        // Test that @Value annotations are working correctly
+        assertEquals("https://jsonplaceholder.typicode.com", service.getBaseUrl());
+        assertEquals(5000, service.getTimeoutMs());
+        
+        logger.info("Base URL from @Value: {}", service.getBaseUrl());
+        logger.info("Timeout from @Value: {}ms", service.getTimeoutMs());
+    }
+
     private User createTestUser() {
         Geo geo = new Geo("-37.3159", "81.1496");
         Address address = new Address("123 Test St", "Test Suite", "Testville", "12345", geo);

@@ -2,14 +2,18 @@ package com.kousenit.restclient.services;
 
 import com.kousenit.restclient.json.Post;
 import com.kousenit.restclient.json.User;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,10 +21,38 @@ import java.util.Optional;
 public class JsonPlaceholderService {
     private final RestClient restClient;
     private final WebClient webClient;
+    private final String baseUrl;
+    private final int timeoutMs;
 
-    public JsonPlaceholderService() {
-        this.restClient = RestClient.create("https://jsonplaceholder.typicode.com");
-        this.webClient = WebClient.create("https://jsonplaceholder.typicode.com");
+    public JsonPlaceholderService(
+            @Value("${api.jsonplaceholder.base-url}") String baseUrl,
+            @Value("${api.jsonplaceholder.timeout:5000}") int timeoutMs) {
+        
+        this.baseUrl = baseUrl;
+        this.timeoutMs = timeoutMs;
+        
+        // Configure RestClient with timeout
+        this.restClient = RestClient.builder()
+                .baseUrl(baseUrl)
+                .build();
+        
+        // Configure WebClient with timeout
+        HttpClient httpClient = HttpClient.create()
+                .responseTimeout(Duration.ofMillis(timeoutMs));
+        
+        this.webClient = WebClient.builder()
+                .baseUrl(baseUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+    }
+    
+    // Getter methods to demonstrate @Value injection in tests
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+    
+    public int getTimeoutMs() {
+        return timeoutMs;
     }
 
     // Synchronous methods using RestClient
