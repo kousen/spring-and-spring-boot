@@ -9,6 +9,19 @@ Comprehensive hands-on exercises for learning Spring Boot fundamentals, from bas
 - **Gradle 8.14.2** (latest stable)
 - IDE with Spring Boot support (IntelliJ IDEA, Spring Tool Suite, or VS Code)
 
+## Lab Materials
+
+### 📚 **labs.md** - Comprehensive Basic Labs
+Foundation labs covering Spring Boot fundamentals from web development to database persistence.
+
+### 🚀 **advanced-labs.md** - Enterprise Development Labs  
+Advanced labs building a complete shopping application with enterprise patterns:
+- Entity design with JPA validation
+- Spring Data repositories and service layers
+- REST API development with full CRUD operations
+- Global exception handling with @RestControllerAdvice
+- Transaction management and testing strategies
+
 ## Project Structure
 
 This repository contains three independent Spring Boot projects that demonstrate different aspects of the framework:

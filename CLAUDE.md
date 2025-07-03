@@ -13,11 +13,12 @@ This file contains common commands and patterns for working with the Spring Boot
 
 ```
 spring-and-spring-boot/
-├── demo/           # Basic Spring Boot web application
-├── restclient/     # External API integration examples
-├── persistence/    # Database access patterns
-├── labs.md         # Comprehensive lab instructions
-└── README.md       # Project overview and quick start
+├── demo/              # Basic Spring Boot web application
+├── restclient/        # External API integration examples
+├── persistence/       # Database access patterns
+├── labs.md            # Comprehensive basic lab instructions
+├── advanced-labs.md   # Enterprise development labs (shopping app)
+└── README.md          # Project overview and quick start
 ```
 
 ## Common Commands
