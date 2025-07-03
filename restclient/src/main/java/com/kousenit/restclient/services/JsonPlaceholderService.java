@@ -80,4 +80,78 @@ public class JsonPlaceholderService {
                 .bodyToFlux(Post.class)
                 .log();
     }
+
+    // POST methods - Create new resources
+    public User createUserSync(User user) {
+        return restClient.post()
+                .uri("/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .body(user)
+                .retrieve()
+                .body(User.class);
+    }
+
+    public Post createPostSync(Post post) {
+        return restClient.post()
+                .uri("/posts")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .body(post)
+                .retrieve()
+                .body(Post.class);
+    }
+
+    public Mono<User> createUserAsync(User user) {
+        return webClient.post()
+                .uri("/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(user)
+                .retrieve()
+                .bodyToMono(User.class)
+                .log();
+    }
+
+    public Mono<Post> createPostAsync(Post post) {
+        return webClient.post()
+                .uri("/posts")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(post)
+                .retrieve()
+                .bodyToMono(Post.class)
+                .log();
+    }
+
+    // DELETE methods - Remove resources
+    public void deleteUserSync(Long id) {
+        restClient.delete()
+                .uri("/users/{id}", id)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
+    public void deletePostSync(Long id) {
+        restClient.delete()
+                .uri("/posts/{id}", id)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
+    public Mono<Void> deleteUserAsync(Long id) {
+        return webClient.delete()
+                .uri("/users/{id}", id)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .log();
+    }
+
+    public Mono<Void> deletePostAsync(Long id) {
+        return webClient.delete()
+                .uri("/posts/{id}", id)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .log();
+    }
 }

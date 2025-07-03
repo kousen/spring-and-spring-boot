@@ -8,7 +8,8 @@
       "Bash(cp:*)",
       "Bash(./gradlew build:*)",
       "Bash(ls:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(./gradlew test:*)"
     ],
     "deny": []
   }
