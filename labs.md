@@ -1,10 +1,33 @@
 # Spring Boot Labs
 
+This document contains hands-on exercises for learning Spring Boot fundamentals, from basic web applications to database persistence patterns.
+
+## Prerequisites
+
+- **Java 17 or later** (Spring Boot 3.x requires Java 17+)
+- **Spring Boot 3.5.3** (current version)
+- IDE with Spring Boot support (IntelliJ IDEA, Spring Tool Suite, or VS Code)
+
+> [!IMPORTANT]
+> These labs are designed for Spring Boot 3.5.3, which requires Java 17 or later. All code examples use modern Java features including records, text blocks, pattern matching, and enhanced switch expressions.
+
+## Table of Contents
+
+1. [Creating a New Project](#creating-a-new-project)
+2. [Add a REST Controller](#add-a-rest-controller)
+3. [Building a REST Client](#building-a-rest-client)
+4. [HTTP Interfaces (Spring Boot 3+)](#http-interfaces-spring-boot-3)
+5. [Consuming External APIs](#consuming-external-apis)
+6. [Using the JDBC Template](#using-the-jdbc-template)
+7. [Using the JDBC Client (Spring Boot 3.2+)](#using-the-jdbc-client-spring-boot-32)
+8. [Implementing the CRUD Layer using JPA](#implementing-the-crud-layer-using-jpa)
+9. [Using Spring Data](#using-spring-data)
+
 ## Creating a New Project
 
 1. Go to http://start.spring.io to access the Spring Initializr
 2. In the "Generate a" drop-down, switch from "Maven Project" to "Gradle Project"
-3. Specify the Group as `com.oreilly` and the Artifact as `demo`
+3. Specify the Group as `com.kousenit` and the Artifact as `demo`
 4. Add the _Spring Web_ and _Thymeleaf_ dependencies
 5. Click the "Generate Project" button to download a zip file containing the project files
 6. Unzip the downloaded "demo.zip" file into any directory you like (but remember where it is)
@@ -31,16 +54,17 @@ plugins {
    - Now you should be able to import the project into Eclipse as an existing Eclipse project (File -> Import... -> General -> Existing Projects Into Workspace)
 
 8. As part of the import process, the IDE will download all the required dependencies
-9. Open the file `src/main/java/com/oreilly/demo/DemoApplication.java` and note that it contains a standard Java "main" method (with signature: `public static void main(String[] args)`)
+9. Open the file `src/main/java/com/kousenit/demo/DemoApplication.java` and note that it contains a standard Java "main" method (with signature: `public static void main(String[] args)`)
 10. Start the application by running this method. There won't be any web components available yet, but you can see the start up of the application in the command window.
-11. Add a controller by creating a file called `com.oreilly.demo.controllers.HelloController` in the `src/main/java` directory
+11. Add a controller by creating a file called `com.kousenit.demo.controllers.HelloController` in the `src/main/java` directory
 
-> **Note:** The goal is to have the `HelloController` class in the `com.oreilly.demo.controllers` package starting at the root directory `src/main/java`
+> [!NOTE]
+> The goal is to have the `HelloController` class in the `com.kousenit.demo.controllers` package starting at the root directory `src/main/java`
 
 12. The code for the `HelloController` is:
 
 ```java
-package com.oreilly.demo.controllers;
+package com.kousenit.demo.controllers;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -113,11 +137,11 @@ public class HelloController {
  > gradlew bootRun
 
 25. When again you're happy the app is running properly, shut it down
-26. Because the controller is a simple POJO, you can unit test it by simply instantiating the controller and calling its `sayHello` method directly. To do so, add a class called `HelloControllerUnitTest` to the `com.oreilly.demo.controllers` package in the _test_ folder, `src/test/java`
+26. Because the controller is a simple POJO, you can unit test it by simply instantiating the controller and calling its `sayHello` method directly. To do so, add a class called `HelloControllerUnitTest` to the `com.kousenit.demo.controllers` package in the _test_ folder, `src/test/java`
 27. The code for the test class is:
 
 ```java
-package com.oreilly.demo.controllers;
+package com.kousenit.demo.controllers;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.Model;
@@ -142,11 +166,11 @@ public class HelloControllerUnitTest {
 ```
 
 28. Run the test by executing this class as a JUnit test. It should pass. It's not terribly useful, however, since it isn't affected by the request mapping or the request parameter.
-29. To perform an integration test instead, use the `MockMVC` classes available in Spring. Create a new class called `HelloControllerMockMVCTest` in the `com.oreilly.demo.controllers` package in `src/test/java`
+29. To perform an integration test instead, use the `MockMVC` classes available in Spring. Create a new class called `HelloControllerMockMVCTest` in the `com.kousenit.demo.controllers` package in `src/test/java`
 30. The code for the integration test is:
 
 ```java
-package com.oreilly.demo.controllers;
+package com.kousenit.demo.controllers;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -185,9 +209,9 @@ public class HelloControllerMockMVCTest {
 
 ## Add a Rest Controller
 
-1. Add another class to the `com.oreilly.demo.controllers` package called `HelloRestController`. This controller will be used to model a RESTful web service, though at this stage it will be limited to HTTP GET requests (for reasons explained below).
+1. Add another class to the `com.kousenit.demo.controllers` package called `HelloRestController`. This controller will be used to model a RESTful web service, though at this stage it will be limited to HTTP GET requests (for reasons explained below).
 2. Add the `@RestController` annotation to the class.
-3. By default, REST controllers will serialize and deserialize Java classes into JSON data using the Jackson 2 JSON library, which is currently on the classpath by default. To have an object (other than a trivial `String`) to serialize, add a class called `Greeting` to the `com.oreilly.demo.json` package. In a larger application, this would represent a domain class that you can store in a database or other persistent storage mechanism.
+3. By default, REST controllers will serialize and deserialize Java classes into JSON data using the Jackson 2 JSON library, which is currently on the classpath by default. To have an object (other than a trivial `String`) to serialize, add a class called `Greeting` to the `com.kousenit.demo.json` package. In a larger application, this would represent a domain class that you can store in a database or other persistent storage mechanism.
 4. In the `Greeting` class, add a private attribute of type `String` called `message`.
 5. Add a `getMessage` method for the `greeting` attribute that returns the current message.
 6. Add a constructor to `Greeting` that takes a `String` argument and saves it to the attribute.
@@ -195,7 +219,7 @@ public class HelloControllerMockMVCTest {
 8. Add an `equals` method, a `hashCode` method, and a `toString` method in the usual manner. A reasonable version would be:
 
 ```java
-package com.oreilly.demo.json;
+package com.kousenit.demo.json;
 
 import java.util.Objects;
 
@@ -239,9 +263,9 @@ public class Greeting {
 13. The full class looks like (note that the string concatenation has been replaced with a `String.format` method)
 
 ```java
-package com.oreilly.hello.controllers;
+package com.kousenit.demo.controllers;
 
-import com.oreilly.hello.json.Greeting;
+import com.kousenit.demo.json.Greeting;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -288,20 +312,42 @@ public void greetWithoutName(@Autowired TestRestTemplate template) {
 
 ## Building a REST client
 
-This exercise uses the new reactive web client called, naturally enough, `WebClient`, to access a RESTful web service. The template is used to convert the response into an object for the rest of the system. Older Spring applications used `RestTemplate` for synchronous access, but that class is in the process of being gradually replaced with `WebClient`. Since `WebClient` is used for reactive applications, it returns responses of type `Mono` and `Flux`, which will be discussed briefly in class. They are essentially "promises" that return a single object (for `Mono`) or a collection (for `Flux`) of objects.
+This exercise uses both the modern `RestClient` class for synchronous access and the reactive `WebClient` for asynchronous access to RESTful web services. The `RestClient` is Spring's modern replacement for `RestTemplate`, providing a fluent API similar to `WebClient` but for synchronous calls. For reactive applications, `WebClient` returns responses of type `Mono` and `Flux`, which are essentially "promises" that return a single object (for `Mono`) or a collection (for `Flux`) of objects.
 
-1. Create a new Spring Boot project (either by using the Initializr at http://start.spring.io or using your IDE) called `restclient`. Add the _Spring Reactive Web_ dependency, but no others are necessary.
-2. Create a service class called `AstroService` in a `com.oreilly.restclient.services` package under `src/main/java`
+1. Create a new Spring Boot project (either by using the Initializr at http://start.spring.io or using your IDE) called `restclient`. Add both the _Spring Web_ and _Spring Reactive Web_ dependencies.
+2. Create a service class called `AstroService` in a `com.kousenit.restclient.services` package under `src/main/java`
+
 3. Add the annotation `@Service` to the class (from the `org.springframework.stereotype` package, so you'll need an `import` statement)
-4. Add a private attribute to `AstroService` of type `WebClient` (from `org.springframework.web.reactive.function.client` package) called `client`
-5. Add a constructor to `AstroService` that takes a single argument of type `WebClient.Builder` called `builder`.
-6. Inside the constructor, set the base URL using the `baseUrl("http://api.open-notify.org")` method on the builder, then invoke `build()` method and assign the result to the `client` attribute. The argument will be _autowired_ into the constructor from the application context.
 
-> **Note:** If you provide only a single constructor in a class, Spring will inject all the arguments automatically. There is no harm, however, in adding the annotation `@Autowired` to the constructor if you wish.
+4. Add private attributes to `AstroService` of type `RestClient` called `restClient` and `WebClient` called `webClient`
 
-7. The site providing the Astro API is http://api.open-notify.org, which processes NASA data. One of its services returns the list of astronauts currently in space.
-8. Add a `public` method to the service called `getAstroResponse`.
-9. The `WebClient` class provides a fluent interface for making a call to a restful web service. This will require creating Java classes that map to the JSON structure. A typical example of the JSON response is:
+5. Add a constructor to `AstroService` that takes no arguments. Inside the constructor, create both clients using their static factory methods:
+
+   ```java
+   public AstroService() {
+       this.restClient = RestClient.create("http://api.open-notify.org");
+       this.webClient = WebClient.create("http://api.open-notify.org");
+   }
+   ```
+
+   > [!NOTE]
+   > `RestClient` was introduced in Spring 6.1 as the modern replacement for `RestTemplate`. It provides a fluent API similar to `WebClient` but for synchronous operations.
+
+6. The site providing the API is http://open-notify.org/, which is an API based on NASA data. We'll access the _Number of People in Space_ service using both synchronous and asynchronous approaches.
+
+7. First, let's add a synchronous method using `RestClient`. Add a `public` method to our service called `getAstroResponseSync` that takes no arguments and returns a `String`:
+
+   ```java
+   public String getPeopleInSpace() {
+       return restClient.get()
+               .uri("/astros.json")
+               .accept(MediaType.APPLICATION_JSON)
+               .retrieve()
+               .body(String.class);
+   }
+   ```
+
+8. For proper object mapping, we'll need to create Java classes that map to the JSON structure. A typical example of the JSON response is:
 
 ```javascript
 {
@@ -314,7 +360,19 @@ This exercise uses the new reactive web client called, naturally enough, `WebCli
 }
 ```
 
-10. Each of the two JSON objects needs to be mapped to a class. Create a class called `Assignment` in the `com.oreilly.restclient.json` package that maps to the JSON object assigned to `value`, as shown:
+9. Each of the two JSON objects needs to be mapped to a class. Create classes `Assignment` and `AstroResponse` in the `com.kousenit.restclient.json` package. 
+
+10. Using records (available in Java 17+), create these classes:
+
+   ```java
+   public record Assignment(String name, String craft) {
+   }
+
+   public record AstroResponse(String message, int number, List<Assignment> people) {
+   }
+   ```
+
+11. Alternatively, if you prefer traditional classes, you can create these instead (though records are recommended for simple data classes):
 
 ```java
 public class Assignment {
@@ -357,10 +415,10 @@ public class Assignment {
 
 > **Note:** It is not actually necessary to map all the included fields, but the response is simple enough to do so in this case.
 
-11. Add another class called `AstroResponse` as shown below. You could use annotations from the included Jackson 2 JSON parser to map the properties to different attribute names, but in this case it's easy enough to make them the same.
+12. The `AstroResponse` class to accompany the `Assignment` class:
 
 ```java
-package com.oreilly.restclient.json;
+package com.kousenit.restclient.json;
 
 import java.util.List;
 
@@ -413,26 +471,40 @@ public class AstroResponse {
 }
 ```
 
-12. Now the JSON response from the web service can be converted into an instance of the `AstroResponse` class. The following code should be added to the `getAstroResponse` method to do so:
+13. Now update the JSON response methods to work with the `AstroResponse` class. Add a synchronous method using `RestClient`:
 
-```java
-return client.get()
-                .uri(uriBuilder -> uriBuilder.path("/astros.json").build())
+    ```java
+    public AstroResponse getAstroResponseSync() {
+        return restClient.get()
+                .uri("/astros.json")
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .body(AstroResponse.class);
+    }
+    ```
+
+14. For asynchronous access, add a method using `WebClient` that returns a `Mono`:
+
+    ```java
+    public Mono<AstroResponse> getAstroResponseAsync() {
+        return webClient.get()
+                .uri("/astros.json")
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(AstroResponse.class)
-                .block(Duration.ofSeconds(2));
-```
+                .log();
+    }
+    ```
 
-13. This method retrieves the JSON response and converts it to an instance of the `AstroResponse` class via the `bodyToMono` method, after blocking a maximum of two seconds until the response is received.
+    > [!NOTE]
+    > The `log()` method will log all reactive stream interactions to the console, which is useful for debugging. In a production reactive application, you would typically return the `Mono` directly rather than blocking on it.
 
-> **Note:** In a reactive application, the return type would have been `Mono<AstroResponse>` and the client would be responsible for waiting for a response to be received. In this case, the client is not aware that a reactive web client is being used to retrieve the response.
+15. To demonstrate how to use the service, create a JUnit 5 test for it. Create a class called `AstroServiceTest` in the `com.kousenit.restclient.services` package under the test hierarchy, `src/test/java`.
 
-14. To demonstrate how to use the service, create a JUnit 5 test for it. Create a class called `AstroServiceTest` in the `com.oreilly.services` package under the test hierarchy, `src/test/java`.
-15. The source for the test is:
+16. Add tests for both synchronous and asynchronous methods:
 
 ```java
-package com.oreilly.restclient.services;
+package com.kousenit.restclient.services;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -442,30 +514,68 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
-public class AstroServiceTest {
+class AstroServiceTest {
     private final Logger logger = LoggerFactory.getLogger(AstroService.class);
 
     @Autowired
     private AstroService service;
 
     @Test
-    public void getAstroResponse() {
-        AstroResponse response = service.getAstroResponse();
+    void getAstroResponseSync() {
+        AstroResponse response = service.getAstroResponseSync();
         logger.info(response.toString());
-        assertTrue(response.getNumber() >= 0);
+        assertNotNull(response);
         assertEquals("success", response.getMessage());
+        assertTrue(response.getNumber() >= 0);
         assertEquals(response.getNumber(), response.getPeople().size());
     }
 
+    @Test
+    void getAstroResponseAsync() {
+        AstroResponse response = service.getAstroResponseAsync()
+                .block(Duration.ofSeconds(2));
+        assertNotNull(response);
+        assertEquals("success", response.getMessage());
+        assertTrue(response.getNumber() >= 0);
+        assertEquals(response.getNumber(), response.getPeople().size());
+        logger.info(response.toString());
+    }
+
+    @Test
+    void getAstroResponseAsyncWithStepVerifier() {
+        service.getAstroResponseAsync()
+                .as(StepVerifier::create)
+                .assertNext(response -> {
+                    assertNotNull(response);
+                    assertEquals("success", response.getMessage());
+                    assertTrue(response.getNumber() >= 0);
+                    assertEquals(response.getNumber(), response.getPeople().size());
+                    logger.info(response.toString());
+                })
+                .verifyComplete();
+    }
 }
 ```
 
-16. Note the use of the SLF4J `Logger` class to log the responses to the console. Not everything in Spring needs to be injected. Spring includes multiple loggers in the classpath. This example uses SLF4J.
-17. Execute the test and make any needed corrections until it passes.
+17. You'll need to add these imports to the test class:
 
-## Http Interfaces (Spring Boot 3+ only)
+    ```java
+    import reactor.test.StepVerifier;
+    import java.time.Duration;
+    import static org.junit.jupiter.api.Assertions.*;
+    ```
 
-If you are using Spring Boot 3.0 or above (and therefore Spring 6.0 or above), there is a new way to access external restful web services. The [Spring 6 documentation](https://docs.spring.io/spring-framework/docs/current/reference/html/integration.html#spring-integration) has a section on REST clients, which includes the `RestTemplate` and `WebClient` classes discussed above, as well as something called HTTP Interface.
+18. Note the use of the SLF4J `Logger` class to log the responses to the console. The reactive test also demonstrates `StepVerifier`, which is the preferred way to test reactive streams.
+
+19. If you used records for the JSON classes, replace method calls like `getMessage()` with `message()`, `getNumber()` with `number()`, and `getPeople()` with `people()`.
+
+20. Execute the tests and make any needed corrections until they pass.
+
+[Back to Table of Contents](#table-of-contents)
+
+## HTTP Interfaces (Spring Boot 3+)
+
+Spring Boot 3.0 introduced HTTP Interfaces, a declarative way to access external RESTful web services. The [Spring 6 documentation](https://docs.spring.io/spring-framework/docs/current/reference/html/integration.html#spring-integration) has a section on REST clients, which includes the `RestTemplate` and `WebClient` classes discussed above, as well as something called HTTP Interface.
 
 The idea is to declare an interface with the access methods you want, and add a proxy factory bean to the application context, and Spring will implement the interface methods for you. This exercise is a quick example of how to do that for our current application.
 
@@ -513,410 +623,335 @@ void getAstroResponseFromInterface(@Autowired AstroInterface astroInterface) {
 
 7. That test should pass. Note that for synchronous access, simply change the return type of the method inside the `getAstroResponse` method of `AstroInterface` to `AstroResponse` instead of the `Mono`. See the documentation for additional details.
 
-## Accessing the Google Geocoder
-
-Google provides a free geocoding web service that converts addresses into geographical coordinates.
-
-This exercise uses the `WebClient` to access the Google geocoder and converts the responses into Java objects.
-
-1. The documentation for the Google geocoder is at https://developers.google.com/maps/documentation/geocoding/intro. Take a look at the page there to see how the geocoder is intended to be used. The base URL for the service is (assuming you want JSON responses) https://maps.googleapis.com/maps/api/geocode/json?address=street,city,state. The `address` parameter needs to be URL encoded and the parts of the address are joined using commas.
-
-> **Note:** The address components can be anything appropriate to the host country. The URL includes a string which separates the values by commas. The components don't have to be street, city, and state.
-
-2. Rather than creating a new project, we'll add a `GeocoderService` to the existing `restclient` project. In that project, add the new class to the `services` package
-3. Add the `@Service` annotation to the class so that Spring will automatically load and manage the bean during its component scan at start up.
-4. Give the class an attribute of type `WebClient` called `client`
-5. Add a constructor to the class that takes an argument of type `WebClient.Builder` called `builder`
-6. Inside the constructor, set the value of the `client` field by setting the base URL using `baseUrl("https://maps.googleapis.com")` and invoking the `build` method on the builder.
-7. Map the JSON response to classes in a `json` package. The JSON response for the URL https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,Mountain+View,CA is:
-
-```javascript
-{
-   "results" : [
-      {
-         "address_components" : [
-            {
-               "long_name" : "1600",
-               "short_name" : "1600",
-               "types" : [ "street_number" ]
-            },
-            {
-               "long_name" : "Amphitheatre Pkwy",
-               "short_name" : "Amphitheatre Pkwy",
-               "types" : [ "route" ]
-            },
-            {
-               "long_name" : "Mountain View",
-               "short_name" : "Mountain View",
-               "types" : [ "locality", "political" ]
-            },
-            {
-               "long_name" : "Santa Clara County",
-               "short_name" : "Santa Clara County",
-               "types" : [ "administrative_area_level_2", "political" ]
-            },
-            {
-               "long_name" : "California",
-               "short_name" : "CA",
-               "types" : [ "administrative_area_level_1", "political" ]
-            },
-            {
-               "long_name" : "United States",
-               "short_name" : "US",
-               "types" : [ "country", "political" ]
-            },
-            {
-               "long_name" : "94043",
-               "short_name" : "94043",
-               "types" : [ "postal_code" ]
-            }
-         ],
-         "formatted_address" : "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA",
-         "geometry" : {
-            "location" : {
-               "lat" : 37.4224764,
-               "lng" : -122.0842499
-            },
-            "location_type" : "ROOFTOP",
-            "viewport" : {
-               "northeast" : {
-                  "lat" : 37.4238253802915,
-                  "lng" : -122.0829009197085
-               },
-               "southwest" : {
-                  "lat" : 37.4211274197085,
-                  "lng" : -122.0855988802915
-               }
-            }
-         },
-         "place_id" : "ChIJ2eUgeAK6j4ARbn5u_wAGqWA",
-         "types" : [ "street_address" ]
-      }
-   ],
-   "status" : "OK"
-}
-```
-
-We don't care about the address components, though the formatted address looks useful. In a `json` subpackage, create the following classes:
-
-```java
-package com.oreilly.restclient.json;
-
-import java.util.List;
-
-public class Response {
-    private List<Result> results;
-    private String status;
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public List<Result> getResults() {
-        return results;
-    }
-
-    public void setResults(List<Result> results) {
-        this.results = results;
-    }
-
-    public Location getLocation() {
-        return results.get(0).getGeometry().getLocation();
-    }
-
-    public String getFormattedAddress() {
-        return results.get(0).getFormattedAddress();
-    }
-}
-
-package com.oreilly.restclient.json;
-
-public class Result {
-    private String formattedAddress;
-    private Geometry geometry;
-
-    public String getFormattedAddress() {
-        return formattedAddress;
-    }
-
-    public void setFormattedAddress(String formattedAddress) {
-        this.formattedAddress = formattedAddress;
-    }
-
-    public Geometry getGeometry() {
-        return geometry;
-    }
-
-    public void setGeometry(Geometry geometry) {
-        this.geometry = geometry;
-    }
-}
-
-package com.oreilly.restclient.json;
-
-public class Geometry {
-    private Location location;
-
-    public Location getLocation() {
-        return location;
-    }
-
-    public void setLocation(Location location) {
-        this.location = location;
-    }
-}
-
-package com.oreilly.restclient.json;
-
-public class Location {
-    private double lat;
-    private double lng;
-
-    public double getLat() {
-        return lat;
-    }
-
-    public void setLat(double lat) {
-        this.lat = lat;
-    }
-
-    public double getLng() {
-        return lng;
-    }
-
-    public void setLng(double lng) {
-        this.lng = lng;
-    }
-
-    public String toString() {
-        return String.format("(%s,%s)", lat, lng);
-    }
-}
-```
-
-8. In the `GeocoderService` class, add constants for the key.
-
-```java
-private static final String KEY = "AIzaSyDw_d6dfxDEI7MAvqfGXEIsEMwjC1PWRno";
-```
-
-9. Add a `public` method that formulates the complete URL with an encoded address and converts it to a `Response` object. The code is simple if you are using Java 11:
-
-```java
-public Site getLatLng(String... address) {
-    String encoded = Stream.of(address)
-        .map(component -> URLEncoder.encode(component, StandardCharsets.UTF_8))
-        .collect(Collectors.joining(","));
-    String path = "/maps/api/geocode/json";
-    Response response = client.get()
-        .uri(uriBuilder ->
-                uriBuilder.path(path)
-                    .queryParam("address", encoded)
-                    .queryParam("key", KEY)
-                    .build())
-        .retrieve()
-        .bodyToMono(Response.class)
-        .block(Duration.ofSeconds(2));
-    return new Site(response.getFormattedAddress(),
-        response.getLocation().getLat(),
-        response.getLocation().getLng());
-}
-```
-
-10. If, however, you are still on Java 8, then the `StandardCharsets` class is not available, and the `encode` version you have to use instead throws a checked exception. In that case, use the following instead:
-
-```java
-private String encodeString(String s) {
-    try {
-        return URLEncoder.encode(s,"UTF-8");
-    } catch (UnsupportedEncodingException e) {
-        e.printStackTrace();
-    }
-    return s;
-}
-
-public Site getLatLng(String... address) {
-    String encoded = Stream.of(address)
-        .map(this::encodeString)
-        .collect(Collectors.joining(","));
-    String path = "/maps/api/geocode/json";
-    Response response = client.get()
-        .uri(uriBuilder ->
-                uriBuilder.path(path)
-                    .queryParam("address", encoded)
-                    .queryParam("key", KEY)
-                    .build())
-        .retrieve()
-        .bodyToMono(Response.class)
-        .block(Duration.ofSeconds(2));
-    return new Site(response.getFormattedAddress(),
-        response.getLocation().getLat(),
-        response.getLocation().getLng());
-}
-```
-
-The use of the `private` method is to avoid the try/catch block inside the `map` method directly, just to improve readability.
-
-11. To use this service, we need an entity called `Site`. Add a POJO to the `com.oreilly.restclient.entities` package called `Site` that wraps a formatted address string and doubles for the latitude and longitude. The code is:
-
-```java
-package com.oreilly.restclient.entities;
-
-public class Site {
-
-    private Integer id;
-    private String address;
-    private double latitude;
-    private double longitude;
-
-    public Site() {}
-
-    public Site(String address, double latitude, double longitude) {
-        this.address = address;
-        this.latitude = latitude;
-        this.longitude = longitude;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setName(String address) {
-        this.address = address;
-    }
-
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
-    }
-
-    @Override
-    public String toString() {
-        return "Site{" +
-                "address='" + address + '\'' +
-                ", latitude=" + latitude +
-                ", longitude=" + longitude +
-                '}';
-    }
-}
-```
-
-12. Now we need a test to make sure this is working properly. Add a test class called `GeocoderServiceTest` to the `com.oreilly.restclient.services` package in the test directory `src/test/java`.
-13. Add the test annotation to the test:
-
-```java
-@SpringBootTest
-```
-
-14. Autowire in the `GeocoderService` into a field called `service`
-15. Add two tests: one using a city and state of Boston, MA, and one using a street address of 1600 Ampitheatre Parkway, Mountain View, CA. The tests are:
-
-```java
-@Test
-public void getLatLngWithoutStreet() {
-    Site site = service.getLatLng("Boston", "MA");
-    assertAll(
-        () -> assertEquals(42.36, site.getLatitude(), 0.01),
-        () -> assertEquals(-71.06, site.getLongitude(), 0.01)
-    );
-}
-
-@Test
-public void getLatLngWithStreet() throws Exception {
-    Site site = service.getLatLng("1600 Ampitheatre Parkway",
-            "Mountain View", "CA");
-    assertAll(
-        () -> assertEquals(37.42, site.getLatitude(), 0.01),
-        () -> assertEquals(-122.08, site.getLongitude(), 0.01)
-    );
-}
-```
-
-16. Run the tests and make sure they pass.
-17. We actually still have a problem. To see it, log the returned `Site` object to the console. First add a SLF4J logger to the `GeocoderServiceTest`
-
-```java
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-// ...
-
-private Logger logger = LoggerFactory.getLogger(GeocoderServiceTest.class);
-```
-
-18. Then, in the test methods, log the site.
-
-```java
-@Test
-public void getLatLngWithoutStreet() {
-    Site site = service.getLatLng("Boston", "MA");
-    logger.info(site.toString());
-    // ... asserts as before ...
-}
-```
-
-19. Run either or both of the tests and look at the logged site(s).
-20. The address fields of the sites are null! That's because our `Result` class has a `String` field called `formattedAddress`, but the JSON response uses underscores instead of camel case (i.e., `formatted_address`).
-
-There are a couple of different ways to solve this. As a one-time fix, you can add an annotation to the `formatted_address` field in the `Result` class
-
-```java
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-public class Result {
-    @JsonProperty("formatted_address")
-    private String formattedAddress;
-
-    // ... rest as before ...
-```
-
-The `@JsonProperty` annotation is a general purpose mechanism you can use whenever the property in the bean does not match the JSON field. Run your test again and see that the `name` value in the `Site` is now correct.
-
-21. The other way to fix the issue is to set a global property that converts all camel case properties to underscores during the JSON parsing process. To use this, first remove the `@JsonProperty` annotation from `Result`.
-22. We will then add the required property to a YAML properties file. By default, Spring Boot generates a file called `application.properties` in the `src/main/resources` folder. Rename that file to `application.yml`
-23. Inside `application.yml`, add the following setting:
-
-```yml
-spring:
-  jackson:
-    property-naming-strategy: SNAKE_CASE
-```
-
-24. Once again run the tests and see that the `address` field in `Site` is set correctly. The advantage of the YAML file is that you can nest multiple properties without too much code duplication.
-
-In principle, now we could save the `Site` instances in a database (generating id values in the process), and since they have latitudes and longitudes, we could then plot them on a map.
+## Consuming External APIs
+
+This exercise demonstrates how to consume external RESTful APIs using both `RestClient` and `WebClient`. We'll use the JSON Placeholder API (https://jsonplaceholder.typicode.com/), a free testing service designed for prototyping and learning.
+
+> [!NOTE]
+> JSON Placeholder provides realistic fake data with endpoints for posts, comments, albums, photos, todos, and users. It's perfect for learning API consumption without API keys or quotas.
+
+1. Rather than creating a new project, we'll add services to the existing `restclient` project. The JSON Placeholder API provides several endpoints, but we'll focus on `/users` and `/posts` as they demonstrate different patterns.
+
+2. First, let's examine the JSON structure. A typical user response from `https://jsonplaceholder.typicode.com/users/1` looks like:
+
+   ```json
+   {
+     "id": 1,
+     "name": "Leanne Graham",
+     "username": "Bret",
+     "email": "Sincere@april.biz",
+     "address": {
+       "street": "Kulas Light",
+       "suite": "Apt. 556",
+       "city": "Gwenborough",
+       "zipcode": "92998-3874",
+       "geo": {
+         "lat": "-37.3159",
+         "lng": "81.1496"
+       }
+     },
+     "phone": "1-770-736-8031 x56442",
+     "website": "hildegard.org",
+     "company": {
+       "name": "Romaguera-Crona",
+       "catchPhrase": "Multi-layered client-server neural-network",
+       "bs": "harness real-time e-markets"
+     }
+   }
+   ```
+
+3. Create domain classes using records in the `com.kousenit.restclient.json` package. Since this demonstrates nested JSON objects, we'll create multiple records:
+
+   ```java
+   package com.kousenit.restclient.json;
+
+   public record Address(
+           String street,
+           String suite, 
+           String city,
+           String zipcode,
+           Geo geo
+   ) {}
+
+   public record Geo(String lat, String lng) {}
+
+   public record Company(
+           String name,
+           String catchPhrase,
+           String bs
+   ) {}
+
+   public record User(
+           Long id,
+           String name,
+           String username,
+           String email,
+           Address address,
+           String phone,
+           String website,
+           Company company
+   ) {}
+   ```
+
+4. For posts, the JSON structure is simpler. A typical post from `https://jsonplaceholder.typicode.com/posts/1`:
+
+   ```json
+   {
+     "userId": 1,
+     "id": 1,
+     "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+     "body": "quia et suscipit\nsuscipit recusandae consequuntur..."
+   }
+   ```
+
+   Create a record for posts:
+
+   ```java
+   public record Post(
+           Long userId,
+           Long id,
+           String title,
+           String body
+   ) {}
+   ```
+
+5. Create a service called `JsonPlaceholderService` in the `com.kousenit.restclient.services` package:
+
+   ```java
+   @Service
+   public class JsonPlaceholderService {
+       private final RestClient restClient;
+       private final WebClient webClient;
+
+       public JsonPlaceholderService() {
+           this.restClient = RestClient.create("https://jsonplaceholder.typicode.com");
+           this.webClient = WebClient.create("https://jsonplaceholder.typicode.com");
+       }
+
+       // ... methods to come
+   }
+   ```
+
+6. Add synchronous methods using `RestClient`:
+
+   ```java
+   public List<User> getAllUsersSync() {
+       return restClient.get()
+               .uri("/users")
+               .accept(MediaType.APPLICATION_JSON)
+               .retrieve()
+               .body(new ParameterizedTypeReference<List<User>>() {});
+   }
+
+   public Optional<User> getUserByIdSync(Long id) {
+       try {
+           User user = restClient.get()
+                   .uri("/users/{id}", id)
+                   .accept(MediaType.APPLICATION_JSON)
+                   .retrieve()
+                   .body(User.class);
+           return Optional.ofNullable(user);
+       } catch (Exception e) {
+           return Optional.empty();
+       }
+   }
+
+   public List<Post> getPostsByUserIdSync(Long userId) {
+       return restClient.get()
+               .uri("/users/{userId}/posts", userId)
+               .accept(MediaType.APPLICATION_JSON)
+               .retrieve()
+               .body(new ParameterizedTypeReference<List<Post>>() {});
+   }
+   ```
+
+7. Add asynchronous methods using `WebClient`:
+
+   ```java
+   public Flux<User> getAllUsersAsync() {
+       return webClient.get()
+               .uri("/users")
+               .accept(MediaType.APPLICATION_JSON)
+               .retrieve()
+               .bodyToFlux(User.class)
+               .log();
+   }
+
+   public Mono<User> getUserByIdAsync(Long id) {
+       return webClient.get()
+               .uri("/users/{id}", id)
+               .accept(MediaType.APPLICATION_JSON)
+               .retrieve()
+               .bodyToMono(User.class)
+               .log();
+   }
+
+   public Flux<Post> getPostsByUserIdAsync(Long userId) {
+       return webClient.get()
+               .uri("/users/{userId}/posts", userId)
+               .accept(MediaType.APPLICATION_JSON)
+               .retrieve()
+               .bodyToFlux(Post.class)
+               .log();
+   }
+   ```
+
+8. You'll need these imports for the generic collections:
+
+   ```java
+   import org.springframework.core.ParameterizedTypeReference;
+   import reactor.core.publisher.Flux;
+   import reactor.core.publisher.Mono;
+   ```
+
+9. Create a comprehensive test class called `JsonPlaceholderServiceTest`:
+
+   ```java
+   @SpringBootTest
+   class JsonPlaceholderServiceTest {
+       private final Logger logger = LoggerFactory.getLogger(JsonPlaceholderServiceTest.class);
+
+       @Autowired
+       private JsonPlaceholderService service;
+
+       @Test
+       void getAllUsersSync() {
+           List<User> users = service.getAllUsersSync();
+           assertNotNull(users);
+           assertFalse(users.isEmpty());
+           assertEquals(10, users.size()); // JSON Placeholder has 10 users
+           
+           User firstUser = users.get(0);
+           assertNotNull(firstUser.name());
+           assertNotNull(firstUser.email());
+           assertNotNull(firstUser.address());
+           assertNotNull(firstUser.company());
+           
+           logger.info("First user: {}", firstUser);
+       }
+
+       @Test
+       void getUserByIdSync() {
+           Optional<User> userOpt = service.getUserByIdSync(1L);
+           assertTrue(userOpt.isPresent());
+           
+           User user = userOpt.get();
+           assertEquals(1L, user.id());
+           assertEquals("Leanne Graham", user.name());
+           assertNotNull(user.address().geo());
+           
+           logger.info("User 1: {}", user);
+       }
+
+       @Test
+       void getUserByIdSyncNotFound() {
+           Optional<User> userOpt = service.getUserByIdSync(999L);
+           assertFalse(userOpt.isPresent());
+       }
+
+       @Test
+       void getPostsByUserIdSync() {
+           List<Post> posts = service.getPostsByUserIdSync(1L);
+           assertNotNull(posts);
+           assertFalse(posts.isEmpty());
+           assertEquals(10, posts.size()); // Each user has 10 posts
+           
+           posts.forEach(post -> {
+               assertEquals(1L, post.userId());
+               assertNotNull(post.title());
+               assertNotNull(post.body());
+           });
+           
+           logger.info("User 1 has {} posts", posts.size());
+       }
+
+       @Test
+       void getAllUsersAsync() {
+           List<User> users = service.getAllUsersAsync()
+                   .collectList()
+                   .block(Duration.ofSeconds(5));
+                   
+           assertNotNull(users);
+           assertEquals(10, users.size());
+           logger.info("Retrieved {} users asynchronously", users.size());
+       }
+
+       @Test
+       void getUserByIdAsync() {
+           User user = service.getUserByIdAsync(1L)
+                   .block(Duration.ofSeconds(5));
+                   
+           assertNotNull(user);
+           assertEquals("Leanne Graham", user.name());
+           logger.info("User retrieved asynchronously: {}", user.name());
+       }
+
+       @Test
+       void getAllUsersAsyncWithStepVerifier() {
+           service.getAllUsersAsync()
+                   .as(StepVerifier::create)
+                   .expectNextCount(10)
+                   .verifyComplete();
+       }
+
+       @Test
+       void getComplexUserData() {
+           // Demonstrate working with nested objects
+           Optional<User> userOpt = service.getUserByIdSync(1L);
+           assertTrue(userOpt.isPresent());
+           
+           User user = userOpt.get();
+           Address address = user.address();
+           Company company = user.company();
+           
+           assertNotNull(address.city());
+           assertNotNull(address.geo().lat());
+           assertNotNull(company.name());
+           
+           logger.info("User {} lives in {} and works at {}", 
+                   user.name(), address.city(), company.name());
+       }
+   }
+   ```
+
+10. Add the required imports to your test class:
+
+    ```java
+    import reactor.test.StepVerifier;
+    import java.time.Duration;
+    import java.util.Optional;
+    import static org.junit.jupiter.api.Assertions.*;
+    import org.slf4j.Logger;
+    import org.slf4j.LoggerFactory;
+    ```
+
+11. Run the tests to verify the integration works correctly. All tests should pass, demonstrating successful API consumption.
+
+## Key Learning Points
+
+This exercise demonstrates several important concepts:
+
+- **No API Keys Required**: JSON Placeholder removes authentication complexity
+- **Nested JSON Mapping**: Records handle complex nested structures elegantly  
+- **Path Parameters**: Using `{id}` placeholders in URIs
+- **Error Handling**: Graceful handling of non-existent resources
+- **Synchronous vs Asynchronous**: Comparing `RestClient` and `WebClient` approaches
+- **Type Safety**: Generic collections with `ParameterizedTypeReference`
+- **Reactive Testing**: Using `StepVerifier` for reactive streams
+
+> [!TIP]
+> JSON Placeholder is perfect for prototyping and testing. It supports GET, POST, PUT, PATCH, and DELETE methods (though modifications aren't persisted), making it ideal for learning REST patterns.
+
+[Back to Table of Contents](#table-of-contents)
 
 ## Using the JDBC template
 
 Spring provides a class called `JdbcTemplate` in the `org.springframework.jdbc.core` package. All it needs in order to work is a data source. It removes almost all the boilerplate code normally associated with JDBC. In this exercise, you'll use the `JdbcTemplate` to implement the standard CRUD (create, read, update, delete) methods on an entity.
 
-1. Make a new Spring Boot project with group `com.oreilly` and artifact called `persistence` using the Spring Initializr. Generate a Gradle build file and select the JPA dependency, which will include JDBC. Also select the H2 dependency, which will provide a JDBC driver for the H2 database as well as a connection pool.
+1. Make a new Spring Boot project with group `com.kousenit` and artifact called `persistence` using the Spring Initializr. Generate a Gradle build file and select the JPA dependency, which will include JDBC. Also select the H2 dependency, which will provide a JDBC driver for the H2 database as well as a connection pool.
 2. Import the project into your IDE in the usual manner.
 3. For this exercise, as well as the related exercises using JPA and Spring Data, we'll use a domain class called `Officer`. An `Officer` will have a generated `id` of type `Integer`, strings for `firstName` and `lastName`, and a `Rank`. The `Rank` will be a Java enum.
-4. First define the `Rank` enum in the `com.oreilly.persistence.entities` package and give it a few constants:
+4. First define the `Rank` enum in the `com.kousenit.persistence.entities` package and give it a few constants:
 
 ```java
 public enum Rank {
@@ -999,7 +1034,7 @@ public class Officer {
 
         if (!id.equals(officer.id)) return false;
         if (rank != officer.rank) return false;
-        if (first != null ? !firstName.equals(officer.firstName) : officer.firstName != null) return false;
+        if (firstName != null ? !firstName.equals(officer.firstName) : officer.firstName != null) return false;
         return lastName.equals(officer.lastName);
     }
 
@@ -1014,35 +1049,35 @@ public class Officer {
 }
 ```
 
-6. One of the features of Spring Boot is that you can create and populate database tables by define scripts with the names `schema.sql` and `data.sql` in the `src/main/resources` folder. First define the database table in `schema.sql`
+6. One of the features of Spring Boot is that you can create and populate database tables by defining scripts with the names `schema.sql` and `data.sql` in the `src/main/resources` folder. First define the database table in `schema.sql`:
 
-```sql
-DROP TABLE IF EXISTS officers;
-CREATE TABLE officers (
-  id         INT         NOT NULL AUTO_INCREMENT,
-  rank       VARCHAR(20) NOT NULL,
-  first_name VARCHAR(50) NOT NULL,
-  last_name  VARCHAR(50) NOT NULL,
-  PRIMARY KEY (id)
-);
-```
+   ```sql
+   DROP TABLE IF EXISTS officers;
+   CREATE TABLE officers (
+     id         INT         NOT NULL AUTO_INCREMENT,
+     rank       VARCHAR(20) NOT NULL,
+     first_name VARCHAR(50) NOT NULL,
+     last_name  VARCHAR(50) NOT NULL,
+     PRIMARY KEY (id)
+   );
+   ```
 
-7. Next populate the table by adding the following `INSERT` statements in `data.sql`
+7. Next populate the table by adding the following `INSERT` statements in `data.sql`:
 
-```sql
-INSERT INTO officers(rank, first_name, last_name) VALUES('CAPTAIN', 'James', 'Kirk');
-INSERT INTO officers(rank, first_name, last_name) VALUES('CAPTAIN', 'Jean-Luc', 'Picard');
-INSERT INTO officers(rank, first_name, last_name) VALUES('CAPTAIN', 'Benjamin', 'Sisko');
-INSERT INTO officers(rank, first_name, last_name) VALUES('CAPTAIN', 'Kathryn', 'Janeway');
-INSERT INTO officers(rank, first_name, last_name) VALUES('CAPTAIN', 'Jonathan', 'Archer');
-```
+   ```sql
+   INSERT INTO officers(rank, first_name, last_name) VALUES('CAPTAIN', 'James', 'Kirk');
+   INSERT INTO officers(rank, first_name, last_name) VALUES('CAPTAIN', 'Jean-Luc', 'Picard');
+   INSERT INTO officers(rank, first_name, last_name) VALUES('CAPTAIN', 'Benjamin', 'Sisko');
+   INSERT INTO officers(rank, first_name, last_name) VALUES('CAPTAIN', 'Kathryn', 'Janeway');
+   INSERT INTO officers(rank, first_name, last_name) VALUES('CAPTAIN', 'Jonathan', 'Archer');
+   ```
 
-8. When Spring starts up, the framework will automatically create a DB connection pool based on the H2 driver and then create and populate the database tables for you. Now we need a DAO (data access object) interface holding the CRUD methods that will be implemented in the different technologies. Define a Java interface called `OfficerDAO` in the `com.oreilly.persistence.dao` package.
+8. When Spring starts up, the framework will automatically create a DB connection pool based on the H2 driver and then create and populate the database tables for you. Now we need a DAO (data access object) interface holding the CRUD methods that will be implemented in the different technologies. Define a Java interface called `OfficerDAO` in the `com.kousenit.persistence.dao` package.
 
 ```java
-package com.oreilly.persistence.dao;
+package com.kousenit.persistence.dao;
 
-import com.oreilly.persistence.entities.Officer;
+import com.kousenit.persistence.entities.Officer;
 
 import java.util.List;
 import java.util.Optional;
@@ -1059,7 +1094,7 @@ public interface OfficerDAO {
 
 As an aside, the names and signatures of these methods were chosen for a reason, which will become obvious when you do the Spring Data implementation later
 
-9. In this exercise, implement the interface using the `JdbcTemplate` class. Start by creating a class in the `com.oreilly.persistence.dao` package called `JdbcOfficerDAO`.
+9. In this exercise, implement the interface using the `JdbcTemplate` class. Start by creating a class in the `com.kousenit.persistence.dao` package called `JdbcOfficerDAO`.
 10. Normally in Spring you would create an instance of `JdbcTemplate` by injecting a `DataSource` into the constructor and using it to instantiate the `JdbcTemplate`. Spring Boot, however, let's you inject a `JdbcTemplate` directly.
 
 ```java
@@ -1114,7 +1149,7 @@ public boolean existsById(Integer id) {
 }
 ```
 
-15. Now for the finder methods. When a SQL query produces a `ResultSet`, the template asks for an implementation of the `RowMapper` interface as another argument to the `queryForObject` method. This interface has a single abstract method called `mapRow`, which takes the `ResultSet` and a row number as arguments. The implementation then uses the arguments to convert a row of the result set into a instance of the domain class. To do this, here implement `findById` method in terms of a query using a standard anonymous inner class that works in Java 7 and below for the `RowMapper`
+15. Now for the finder methods. When a SQL query produces a `ResultSet`, the template asks for an implementation of the `RowMapper` interface as another argument to the `queryForObject` method. This interface has a single abstract method called `mapRow`, which takes the `ResultSet` and a row number as arguments. The implementation converts a row of the result set into an instance of the domain class. Implement the `findById` method using a `RowMapper`:
 
 ```java
 @Override
@@ -1122,35 +1157,30 @@ public Optional<Officer> findById(Integer id) {
     try (Stream<Officer> stream =
             jdbcTemplate.queryForStream(
                 "select * from officers where id=?",
-                new RowMapper<Officer>() {  // Java 7 anonymous inner class
-                    @Override
-                    public Officer mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        return new Officer(rs.getInt("id"),
-                                Rank.valueOf(rs.getString("rank")),
-                                rs.getString("first_name"),
-                                rs.getString("last_name"));
-                    }
-                },
+                (rs, rowNum) -> new Officer(rs.getInt("id"),
+                        Rank.valueOf(rs.getString("rank")),
+                        rs.getString("first_name"),
+                        rs.getString("last_name")),
                 id)) {
         return stream.findFirst();
     }
 }
 ```
 
-16. The same row mapper can be used to find all the instances of `Officer`. The `JdbcTemplate` uses the `query` method to automatically iterate over the result set, calling the row mapper for each row to convert it to an `Officer`, and ultimately returns a collection of officers. This time, however, take advantage of Java 8 by using a lambda expression to implement the row mapper.
+16. The same row mapper pattern can be used to find all instances of `Officer`. The `JdbcTemplate` uses the `query` method to automatically iterate over the result set, calling the row mapper for each row to convert it to an `Officer`, and returns a collection of officers.
 
 ```java
 @Override
 public List<Officer> findAll() {
     return jdbcTemplate.query("SELECT * FROM officers",
-            (rs, rowNum) -> new Officer(rs.getInt("id"), // Java 8 lambda expression
+            (rs, rowNum) -> new Officer(rs.getInt("id"),
                     Rank.valueOf(rs.getString("rank")),
                     rs.getString("first_name"),
                     rs.getString("last_name")));
 }
 ```
 
-The row mapper implementation is exactly the same, but uses a Java 8 lambda expression rather than the anonymous inner class. The return type is a `Collection<Officer>`
+The row mapper implementation uses a lambda expression for clean, concise code.
 
 17. Finally, for the insert, we'll take a different approach. While you can write the SQL insert statement and use the `update` method on the `JdbcTemplate`, there is no easy way to return the generated primary key. So instead let's use a related class called a `SimpleJdbcInsert`. Add that class as an attribute and instantiate and configure it in the constructor
 
@@ -1239,7 +1269,7 @@ public void count() throws Exception {
 }
 ```
 
-24. The rest of the tests are pretty straightforward, other than the fact we will use Java 8 constructs to implement them.
+24. The rest of the tests are straightforward and use modern Java features:
 
 ```java
 @Test
@@ -1279,6 +1309,227 @@ logging.level.sql=debug
 ```
 
 This will enable logging for that specific class. You can use the logger for many parts of the underlying system, including the embedded container, Hibernate, and Spring Boot.
+
+[Back to Table of Contents](#table-of-contents)
+
+## Using the JDBC Client (Spring Boot 3.2+)
+
+Spring Framework 6.1 (included in Spring Boot 3.2+) introduced `JdbcClient`, a modern fluent API that serves as a more user-friendly alternative to `JdbcTemplate`. While `JdbcTemplate` remains widely used and fully supported, `JdbcClient` provides a cleaner, more readable approach that aligns with other modern Spring APIs like `RestClient` and `WebClient`.
+
+> [!NOTE]
+> This exercise uses the same database schema and `Officer` entity from the previous JdbcTemplate lab. You can continue with the same `persistence` project or create a new one following the same setup steps.
+
+1. Create a new DAO implementation called `JdbcClientOfficerDAO` that implements the same `OfficerDAO` interface, but uses `JdbcClient` instead of `JdbcTemplate`.
+
+2. Add the `@Repository` annotation and inject `JdbcClient` into the constructor:
+
+   ```java
+   @Repository
+   public class JdbcClientOfficerDAO implements OfficerDAO {
+       private final JdbcClient jdbcClient;
+
+       public JdbcClientOfficerDAO(JdbcClient jdbcClient) {
+           this.jdbcClient = jdbcClient;
+       }
+
+       // ... methods to come
+   }
+   ```
+
+   > [!NOTE]
+   > Spring Boot automatically provides a `JdbcClient` bean when the JDBC dependency is present, configured with the same `DataSource` as `JdbcTemplate`.
+
+3. Implement the `count` method using the fluent API:
+
+   ```java
+   @Override
+   public long count() {
+       return jdbcClient.sql("SELECT count(*) FROM officers")
+               .query(Long.class)
+               .single();
+   }
+   ```
+
+4. Implement the `existsById` method with named parameters:
+
+   ```java
+   @Override
+   public boolean existsById(Integer id) {
+       return jdbcClient.sql("SELECT EXISTS(SELECT 1 FROM officers WHERE id = :id)")
+               .param("id", id)
+               .query(Boolean.class)
+               .single();
+   }
+   ```
+
+5. Implement the `delete` method:
+
+   ```java
+   @Override
+   public void delete(Officer officer) {
+       jdbcClient.sql("DELETE FROM officers WHERE id = :id")
+               .param("id", officer.getId())
+               .update();
+   }
+   ```
+
+6. For the finder methods, `JdbcClient` provides clean row mapping. Implement `findById`:
+
+   ```java
+   @Override
+   public Optional<Officer> findById(Integer id) {
+       return jdbcClient.sql("SELECT * FROM officers WHERE id = :id")
+               .param("id", id)
+               .query((rs, rowNum) -> new Officer(
+                       rs.getInt("id"),
+                       Rank.valueOf(rs.getString("rank")),
+                       rs.getString("first_name"),
+                       rs.getString("last_name")))
+               .optional();
+   }
+   ```
+
+7. Implement `findAll` using the same row mapper pattern:
+
+   ```java
+   @Override
+   public List<Officer> findAll() {
+       return jdbcClient.sql("SELECT * FROM officers")
+               .query((rs, rowNum) -> new Officer(
+                       rs.getInt("id"),
+                       Rank.valueOf(rs.getString("rank")),
+                       rs.getString("first_name"),
+                       rs.getString("last_name")))
+               .list();
+   }
+   ```
+
+8. For the `save` method, we'll use `JdbcClient` with a key holder to get the generated ID. First, add the required import and create a key holder:
+
+   ```java
+   @Override
+   public Officer save(Officer officer) {
+       if (officer.getId() == null) {
+           // Insert new officer
+           var keyHolder = new GeneratedKeyHolder();
+           jdbcClient.sql("""
+                   INSERT INTO officers (rank, first_name, last_name) 
+                   VALUES (:rank, :firstName, :lastName)
+                   """)
+                   .param("rank", officer.getRank().name())
+                   .param("firstName", officer.getFirstName())
+                   .param("lastName", officer.getLastName())
+                   .update(keyHolder);
+           
+           var newId = keyHolder.getKey().intValue();
+           return new Officer(newId, officer.getRank(), 
+                   officer.getFirstName(), officer.getLastName());
+       } else {
+           // Update existing officer
+           jdbcClient.sql("""
+                   UPDATE officers 
+                   SET rank = :rank, first_name = :firstName, last_name = :lastName 
+                   WHERE id = :id
+                   """)
+                   .param("id", officer.getId())
+                   .param("rank", officer.getRank().name())
+                   .param("firstName", officer.getFirstName())
+                   .param("lastName", officer.getLastName())
+                   .update();
+           return officer;
+       }
+   }
+   ```
+
+   > [!TIP]
+   > Notice how `JdbcClient` allows us to use text blocks (Java 17+ feature) for multi-line SQL, making the code more readable. The named parameters (`:paramName`) are much cleaner than positional parameters (`?`).
+
+9. Add the necessary imports to your class:
+
+   ```java
+   import org.springframework.jdbc.core.simple.JdbcClient;
+   import org.springframework.jdbc.support.GeneratedKeyHolder;
+   ```
+
+10. Create a test class called `JdbcClientOfficerDAOTest` to verify the implementation. Use the same test patterns as the `JdbcTemplate` version, but with a different qualifier:
+
+    ```java
+    @SpringBootTest
+    @Transactional
+    public class JdbcClientOfficerDAOTest {
+        
+        @Autowired
+        @Qualifier("jdbcClientOfficerDAO")
+        private OfficerDAO dao;
+
+        @Test
+        public void save() {
+            Officer officer = new Officer(Rank.LIEUTENANT, "Nyota", "Uhura");
+            officer = dao.save(officer);
+            assertNotNull(officer.getId());
+        }
+
+        @Test
+        public void findByIdThatExists() {
+            Optional<Officer> officer = dao.findById(1);
+            assertTrue(officer.isPresent());
+            assertEquals(1, officer.get().getId().intValue());
+        }
+
+        @Test
+        public void findByIdThatDoesNotExist() {
+            Optional<Officer> officer = dao.findById(999);
+            assertFalse(officer.isPresent());
+        }
+
+        @Test
+        public void count() {
+            assertEquals(5, dao.count());
+        }
+
+        @Test
+        public void findAll() {
+            List<String> dbNames = dao.findAll().stream()
+                    .map(Officer::getLastName)
+                    .collect(Collectors.toList());
+            assertThat(dbNames).contains("Kirk", "Picard", "Sisko", "Janeway", "Archer");
+        }
+
+        @Test
+        public void delete() {
+            IntStream.rangeClosed(1, 5)
+                    .forEach(id -> {
+                        Optional<Officer> officer = dao.findById(id);
+                        assertTrue(officer.isPresent());
+                        dao.delete(officer.get());
+                    });
+            assertEquals(0, dao.count());
+        }
+
+        @Test
+        public void existsById() {
+            IntStream.rangeClosed(1, 5)
+                    .forEach(id -> assertTrue(dao.existsById(id)));
+        }
+    }
+    ```
+
+11. Run the tests to verify that the `JdbcClient` implementation works correctly. All tests should pass, demonstrating that both approaches provide the same functionality.
+
+## Key Advantages of JdbcClient
+
+The `JdbcClient` approach offers several benefits over `JdbcTemplate`:
+
+- **Fluent API**: More readable and chainable method calls
+- **Named Parameters**: Clearer parameter binding with `:paramName` syntax
+- **Built-in Optional Support**: Methods like `optional()` and `single()` provide better null handling
+- **Consistent Design**: Follows the same patterns as other modern Spring clients
+- **Text Block Friendly**: Works seamlessly with Java 17+ text blocks for complex SQL
+
+> [!TIP]
+> While both `JdbcTemplate` and `JdbcClient` are fully supported, consider using `JdbcClient` for new projects to take advantage of its more modern and readable API.
+
+[Back to Table of Contents](#table-of-contents)
 
 ## Implementing the CRUD layer using JPA
 
@@ -1457,6 +1708,8 @@ public class JdbcOfficerDAOTest {
 
 Now both tests should work properly.
 
+[Back to Table of Contents](#table-of-contents)
+
 ## Using Spring Data
 
 The Spring Data JPA project makes it incredibly easy to implement a DAO layer. You extend the proper interface, and the underlying infrastructure generates all the implementations for you.
@@ -1473,7 +1726,7 @@ dependencies {
 }
 ```
 
-2. Spring Data works by defining an interface that extends one of a few provided interfaces, where you specify the domain class and its primary key type. Therefore, create an interface called `OfficerRepository` in the `com.oreilly.persistence.dao` package
+2. Spring Data works by defining an interface that extends one of a few provided interfaces, where you specify the domain class and its primary key type. Therefore, create an interface called `OfficerRepository` in the `com.kousenit.persistence.dao` package
 
 ```java
 public interface OfficerRepository extends JpaRepository<Officer, Integer> {
@@ -1511,12 +1764,15 @@ List<Officer> findAllByLastNameLikeAndRank(String like, Rank rank);
 logging.level.org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration=debug
 ```
 
-7. Then you can go to "http://localhost:8080/db-console" and log in with the URL shown in the log, the user name "sa", and no password.
-8. Once the tests are running, add two dependencies to the Gradle build file: one for the Spring Data Rest project (which will expose the data via a REST interface) and for the HAL browser, which will give us a convenient client to use
+7. Then you can go to "http://localhost:8080/h2-console" and log in with the URL shown in the log, the user name "sa", and no password.
 
-```groovy
-implementation 'org.springframework.boot:spring-boot-starter-data-rest'
-implementation 'org.springframework.data:spring-data-rest-hal-explorer'
-```
+8. Once the tests are running, add two dependencies to the Gradle build file: one for the Spring Data Rest project (which will expose the data via a REST interface) and for the HAL browser, which will give us a convenient client to use:
 
-9. After rebuilding the project, start up the application (using the class with the main method) and navigate to http://localhost:8080. Spring will insert the HAL browser at that point to allow you to add, update, and remove individual elements, which we'll do in class.
+   ```groovy
+   implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+   implementation 'org.springframework.data:spring-data-rest-hal-explorer'
+   ```
+
+9. After rebuilding the project, start up the application (using the class with the main method) and navigate to http://localhost:8080. Spring will insert the HAL browser at that point to allow you to add, update, and remove individual elements.
+
+[Back to Table of Contents](#table-of-contents)

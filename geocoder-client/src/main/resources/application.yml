@@ -1,9 +1,0 @@
-spring:
-  jackson:
-    property-naming-strategy: SNAKE_CASE
-  thymeleaf:
-    cache: false
-logging:
-  level:
-    sql: debug
-    web: debug
