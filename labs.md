@@ -20,8 +20,7 @@ This document contains hands-on exercises for learning Spring Boot fundamentals,
 5. [Consuming External APIs](#consuming-external-apis)
 6. [Using the JDBC Template](#using-the-jdbc-template)
 7. [Using the JDBC Client (Spring Boot 3.2+)](#using-the-jdbc-client-spring-boot-32)
-8. [Implementing the CRUD Layer using JPA](#implementing-the-crud-layer-using-jpa)
-9. [Using Spring Data](#using-spring-data)
+8. [Using JPA entities and Spring Data JPA](#using-jpa-entities-and-spring-data-jpa)
 
 ## Creating a New Project
 
@@ -1740,11 +1739,13 @@ The `JdbcClient` approach offers several benefits over `JdbcTemplate`:
 
 [Back to Table of Contents](#table-of-contents)
 
-## Implementing the CRUD layer using JPA
+## Using JPA entities and Spring Data JPA
 
-The Java Persistence API (JPA) is a layer over the so-called persistence providers, the most common of which is Hibernate. With regular Spring, configuring JPA requires several beans, including an entity manger factory and a JPA vendor adapter. Fortunately, in Spring Boot, the presence of the JPA dependency causes the framework to implement all of that for you.
+The Java Persistence API (JPA) is a layer over persistence providers like Hibernate. In modern Spring Boot development, most developers skip manual JPA DAO implementations and use Spring Data JPA repositories directly. This exercise demonstrates the practical workflow: create JPA entities with proper annotations, then implement repositories using Spring Data JPA.
 
-1. To use JPA, we need an entity. We'll use the same `Officer` class from the previous exercise, but this time we will add the appropriate JPA annotations `@Entity`, `@Id`, `@GeneratedValue`, `@Table`, and `@Column`
+### Step 1: Create the JPA Entity
+
+1. We'll use the same `Officer` class from the previous exercise, but add JPA annotations to make it a proper entity. Update the `Officer` class in the `com.kousenit.persistence.entities` package:
 
 ```java
 @Entity
@@ -1761,139 +1762,28 @@ public class Officer {
 
     private String lastName;
 
-// ... rest as before ...
+    public Officer() {}
+
+    public Officer(Rank rank, String firstName, String lastName) {
+        this.rank = rank;
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
+
+    // ... getters and setters as before ...
 }
 ```
 
-The `@Enumerated` annotation tells Hibernate to store the value of the enum as a string rather than an index.
+**Key JPA annotations:**
+- `@Entity`: Marks this class as a JPA entity
+- `@Table(name = "officers")`: Specifies the database table name
+- `@Id`: Marks the primary key field
+- `@GeneratedValue(strategy = GenerationType.IDENTITY)`: Auto-generates the ID
+- `@Enumerated(EnumType.STRING)`: Stores enum values as strings rather than ordinals
 
-2. Create a class called `JpaOfficerDAO` that implements the `OfficerDAO` interface and adds an `EntityManagerFactory` as an attribute
+### Step 2: Configure JPA Settings
 
-```java
-@Repository
-public class JpaOfficerDAO implements OfficerDAO {
-    @PersistenceContext
-    private EntityManager entityManager;
-
-// ... more to come ...
-}
-```
-
-The `@PersistenceContext` annotation is used to inject an entity manager into the DAO. Normally we would also need to make the class transactional, but in keeping with common practice that can be handled in a service layer. In this particular case, however, we'll so the transactions in the tests
-
-3. The implementations of the individual methods is very simple. Since this is a course on Spring and not on JPA, they are given here without comment. Add them to the `JpaOfficerDAO` class
-
-```java
-@Override
-public Officer save(Officer officer) {
-    entityManager.persist(officer);
-    return officer;
-}
-
-@Override
-public Optional<Officer> findById(Integer id) {
-    return Optional.ofNullable(entityManager.find(Officer.class, id));
-}
-
-@Override
-public List<Officer> findAll() {
-    return entityManager.createQuery("select o from Officer o", Officer.class)
-                        .getResultList();
-}
-
-@Override
-public long count() {
-    return entityManager.createQuery("select count(o.id) from Officer o", Long.class)
-                        .getSingleResult();
-}
-
-@Override
-public void delete(Officer officer) {
-    entityManager.remove(officer);
-}
-
-@Override
-public boolean existsById(Integer id) {
-    Object result = entityManager.createQuery(
-            "SELECT 1 from Officer o where o.id=:id")
-                                 .setParameter("id", id)
-                                 .getSingleResult();
-    return result != null;
-}
-```
-
-4. The same tests used to check the `JdbcOfficerDAO` can be done again, just using a different DAO as the class under test, with one exception:
-
-```java
-@SpringBootTest
-@Transactional
-public class JpaOfficerDAOTest {
-    @Autowired
-    private JpaOfficerDAO dao;
-
-    @Autowired
-    private JdbcTemplate template;
-
-    // private method to retrieve the current ids in the database
-    private List<Integer> getIds() {
-        return template.query("select id from officers", (rs, num) -> rs.getInt("id"));
-    }
-
-    @Test
-    public void testSave() throws Exception {
-        Officer officer = new Officer(Rank.LIEUTENANT, "Nyota", "Uhuru");
-        officer = dao.save(officer);
-        assertNotNull(officer.getId());
-    }
-
-    @Test
-    public void findOneThatExists() throws Exception {
-        getIds().forEach(id -> {
-            Optional<Officer> officer = dao.findById(id);
-            assertTrue(officer.isPresent());
-            assertEquals(id, officer.get().getId());
-        });
-    }
-
-    @Test
-    public void findOneThatDoesNotExist() throws Exception {
-        Optional<Officer> officer = dao.findById(999);
-        assertFalse(officer.isPresent());
-    }
-
-    @Test
-    public void findAll() throws Exception {
-        List<String> dbNames = dao.findAll().stream()
-                                  .map(Officer::getLastName)
-                                  .collect(Collectors.toList());
-        assertThat(dbNames).contains("Kirk", "Picard", "Sisko", "Janeway", "Archer");
-    }
-
-    @Test
-    public void count() throws Exception {
-        assertEquals(5, dao.count());
-    }
-
-    @Test
-    public void delete() throws Exception {
-        getIds().forEach(id -> {
-            Optional<Officer> officer = dao.findById(id);
-            assertTrue(officer.isPresent());
-            dao.delete(officer.get());
-        });
-        assertEquals(0, dao.count());
-    }
-
-    @Test
-    public void existsById() throws Exception {
-        getIds().forEach(id -> assertTrue(dao.existsById(id)));
-    }
-}
-```
-
-Because there are now two separate beans available to Spring that implement the same `OfficerDAO` interface, the `@Autowired` annotation would fail, claiming it expected a single bean of that type but found two. The `@Qualifier` annotation is used to tell Spring the name of the bean to inject. _Several of the tests are going to fail_, however, because we have one other setting we have to modify
-
-5. If you run the tests, you see that we quickly run into a problem, which is that the sample data is not there! This is because, by default, Hibernate is in what is called "create-drop" mode, which means it drops the database after each execution and re-creates it on startup. We can prevent that, however, by adding a setting to the `application.yml` file:
+2. Add JPA configuration to `src/main/resources/application.yml`:
 
 ```yaml
 spring:
@@ -1903,85 +1793,172 @@ spring:
         show-sql: true
         properties:
             hibernate.format_sql: true
+    h2:
+        console:
+            enabled: true
 ```
 
-We switched the `spring.jpa.hibernate.ddl-auto` property to `update` (other options are `create`, `create-drop`, and `validate`), which will add columns as necessary but not drop any tables or data. We are also logging the generated SQL and formatting it as well.
+**Configuration details:**
+- `ddl-auto: update`: Creates tables and adds columns without dropping data
+- `show-sql: true`: Logs generated SQL queries
+- `hibernate.format_sql: true`: Formats SQL for better readability
+- `h2.console.enabled: true`: Enables H2 web console
 
-6. There's one step of clean up required, however. This test should pass, but the `JdbcOfficerDAOTest` won't because we have to add the `@Qualifier` there, too.
+### Step 3: Create Spring Data JPA Repository
 
-```java
-public class JdbcOfficerDAOTest {
-    @Autowired @Qualifier("jdbcOfficerDAO")
-    private OfficerDAO dao;
-```
-
-Now both tests should work properly.
-
-[Back to Table of Contents](#table-of-contents)
-
-## Using Spring Data
-
-The Spring Data JPA project makes it incredibly easy to implement a DAO layer. You extend the proper interface, and the underlying infrastructure generates all the implementations for you.
-
-Spring Data is a large, powerful API. In this exercise, we'll just show the basics.
-
-1. Since we created this project based on the Spring Data JPA dependency, we don't need to modify the Gradle build file to add it. Note that the build file already includes the required dependencies:
-
-```groovy
-dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	runtimeOnly 'com.h2database:h2'
-	testImplementation('org.springframework.boot:spring-boot-starter-test')
-}
-```
-
-2. Spring Data works by defining an interface that extends one of a few provided interfaces, where you specify the domain class and its primary key type. Therefore, create an interface called `OfficerRepository` in the `com.kousenit.persistence.dao` package
+3. Spring Data works by defining an interface that extends one of the provided repository interfaces. Create an interface called `OfficerRepository` in the `com.kousenit.persistence.dao` package:
 
 ```java
 public interface OfficerRepository extends JpaRepository<Officer, Integer> {
+    // Spring Data JPA generates all CRUD methods automatically
+    
+    // Custom query methods using method naming conventions
+    List<Officer> findByRank(Rank rank);
+    List<Officer> findByLastName(String lastName);
+    List<Officer> findByRankAndLastNameLike(Rank rank, String lastName);
+    
+    // Optional: Custom JPQL queries
+    @Query("SELECT o FROM Officer o WHERE o.firstName = :firstName")
+    List<Officer> findByFirstNameQuery(@Param("firstName") String firstName);
 }
 ```
 
-The interface can extend `CrudRepository`, `PagingAndSortingRepository`, or, as here, `JpaRepository`. You only have to specify the two generic parameters that represent the domain class and the primary key type. Here we use `Officer` and `Integer`.
+**Key points:**
+- Extends `JpaRepository<Officer, Integer>` (entity type and ID type)
+- Spring Data automatically generates implementations for standard CRUD operations
+- Method naming conventions create queries (e.g., `findByRank` becomes `WHERE rank = ?`)
+- `@Query` annotation allows custom JPQL queries
 
-The framework will now generate the implementations of about a dozen different methods, including all the methods listed in the `OfficerDAO` interface (which is why those methods were chosen in the first place)
+### Step 4: Create Repository Tests
 
-3. The test class is similar to the others, except that it's written in terms of the `OfficerRepository` bean. Simply copy the existing `JpaOfficerDAOTest` class in `src/test/java` into a class called `OfficerRepositoryTest` in the same package and change the autowired repository to be of type `OfficerRepository`.
+4. Create a comprehensive test class `OfficerRepositoryTest` in the `src/test/java` directory:
 
 ```java
 @SpringBootTest
 @Transactional
-public class OfficerRepositoryTest {
+@TestMethodOrder(OrderAnnotation.class)
+class OfficerRepositoryTest {
+    
     @Autowired
     private OfficerRepository repository;
 
-// ... more to come ...
+    @Test
+    @Order(1)
+    void testSave() {
+        Officer officer = new Officer(Rank.LIEUTENANT, "Nyota", "Uhura");
+        officer = repository.save(officer);
+        assertNotNull(officer.getId());
+    }
+
+    @Test
+    @Order(2)
+    void findById() {
+        Optional<Officer> officer = repository.findById(1);
+        assertTrue(officer.isPresent());
+        assertEquals("Kirk", officer.get().getLastName());
+    }
+
+    @Test
+    @Order(3)
+    void findAll() {
+        List<String> lastNames = repository.findAll().stream()
+                .map(Officer::getLastName)
+                .collect(Collectors.toList());
+        assertThat(lastNames).contains("Kirk", "Picard", "Sisko", "Janeway", "Archer");
+    }
+
+    @Test
+    @Order(4)
+    void count() {
+        assertEquals(5, repository.count());
+    }
+
+    @Test
+    @Order(5)
+    void findByRank() {
+        List<Officer> captains = repository.findByRank(Rank.CAPTAIN);
+        assertEquals(5, captains.size());
+        captains.forEach(officer -> assertEquals(Rank.CAPTAIN, officer.getRank()));
+    }
+
+    @Test
+    @Order(6)
+    void findByLastName() {
+        List<Officer> kirks = repository.findByLastName("Kirk");
+        assertEquals(1, kirks.size());
+        assertEquals("James", kirks.get(0).getFirstName());
+    }
+
+    @Test
+    @Order(7)
+    void findByRankAndLastNameLike() {
+        List<Officer> officers = repository.findByRankAndLastNameLike(Rank.CAPTAIN, "%a%");
+        assertFalse(officers.isEmpty());
+        officers.forEach(o -> {
+            assertEquals(Rank.CAPTAIN, o.getRank());
+            assertTrue(o.getLastName().contains("a"));
+        });
+    }
+
+    @Test
+    @Order(8)
+    void existsById() {
+        assertTrue(repository.existsById(1));
+        assertFalse(repository.existsById(999));
+    }
+
+    @Test
+    @Order(9)
+    void delete() {
+        long initialCount = repository.count();
+        Optional<Officer> officer = repository.findById(1);
+        assertTrue(officer.isPresent());
+        
+        repository.delete(officer.get());
+        assertEquals(initialCount - 1, repository.count());
+        assertFalse(repository.existsById(1));
+    }
 }
 ```
 
-4. All the tests should pass, as before.
-5. If you have time, you can use the Spring Data feature where it will will generate queries based on a naming convention. Simply add methods to the `OfficerRepository` interface of the form `findAllBy<property>` and you can use `And` or `Or` to chain where clauses together. For example, to find officers by their last names and by their rank, just add the following methods:
+### Step 5: Test and Explore
 
-```java
-List<Officer> findByRank(Rank rank);
-List<Officer> findAllByLastNameLikeAndRank(String like, Rank rank);
+5. Run the tests to verify everything works correctly. You should see:
+   - Hibernate DDL statements creating the `officers` table
+   - SQL queries being logged and formatted
+   - All tests passing
+
+6. **H2 Console Access**: Start the application and navigate to `http://localhost:8080/h2-console`:
+   - **JDBC URL**: `jdbc:h2:mem:testdb`
+   - **Username**: `sa`
+   - **Password**: (leave empty)
+
+### Step 6: Add REST Endpoints (Optional)
+
+7. For a complete modern setup, add Spring Data REST to automatically expose your repositories as REST endpoints. Add to `build.gradle`:
+
+```groovy
+dependencies {
+    // ... existing dependencies ...
+    implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+    implementation 'org.springframework.data:spring-data-rest-hal-explorer'
+}
 ```
 
-6. If you want to see the H2 console, add the Spring DevTools dependency and the Web dependency to your project. Then, to be sure to see the proper URL for the database (assuming you don't set it in `application.properties`), add the following log level:
+8. After rebuilding, navigate to `http://localhost:8080` to see the HAL Explorer, which provides a web interface for your REST API.
 
-```java
-logging.level.org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration=debug
-```
+## Key Learning Points
 
-7. Then you can go to "http://localhost:8080/h2-console" and log in with the URL shown in the log, the user name "sa", and no password.
+This exercise demonstrates several important concepts:
 
-8. Once the tests are running, add two dependencies to the Gradle build file: one for the Spring Data Rest project (which will expose the data via a REST interface) and for the HAL browser, which will give us a convenient client to use:
+- **JPA Entity Mapping**: Using annotations to map Java classes to database tables
+- **Modern Repository Pattern**: Spring Data JPA eliminates boilerplate DAO code
+- **Automatic Query Generation**: Method naming conventions create queries automatically
+- **Configuration**: Hibernate and H2 settings for development
+- **Testing**: Comprehensive repository testing with Spring Boot Test
+- **REST Exposure**: Automatic REST API generation with Spring Data REST
 
-   ```groovy
-   implementation 'org.springframework.boot:spring-boot-starter-data-rest'
-   implementation 'org.springframework.data:spring-data-rest-hal-explorer'
-   ```
-
-9. After rebuilding the project, start up the application (using the class with the main method) and navigate to http://localhost:8080. Spring will insert the HAL browser at that point to allow you to add, update, and remove individual elements.
+> [!TIP]
+> This approach represents modern Spring Boot development: focus on domain modeling with JPA entities, then leverage Spring Data JPA for data access. Manual JPA DAO implementations are rarely needed in practice.
 
 [Back to Table of Contents](#table-of-contents)
