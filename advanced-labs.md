@@ -3335,3 +3335,893 @@ curl -X POST "http://localhost:8080/api/v1/products/1/reserve-stock" \
 - **Exception Handling**: Automatic mapping of service exceptions to HTTP status codes
 - **MockMVC Testing**: Testing controllers without starting the full server
 - **Integration Testing**: End-to-end API testing with real database operations
+
+## Lab 7: Add Global Exception Handling with @RestControllerAdvice
+
+**Objective**: Implement centralized exception handling using @RestControllerAdvice with modern ProblemDetail responses for consistent error handling across the API.
+
+### Step 7.1: Create Error Response DTOs
+
+First, create DTOs for standardized error responses:
+
+Create `src/main/java/com/kousenit/shopping/dto/ApiError.java`:
+
+```java
+package com.kousenit.shopping.dto;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import org.springframework.http.HttpStatus;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public record ApiError(
+    HttpStatus status,
+    int statusCode,
+    String error,
+    String message,
+    String path,
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    LocalDateTime timestamp,
+    List<ValidationError> validationErrors,
+    Map<String, Object> details
+) {
+    
+    public static ApiError of(HttpStatus status, String message, String path) {
+        return new ApiError(
+            status,
+            status.value(),
+            status.getReasonPhrase(),
+            message,
+            path,
+            LocalDateTime.now(),
+            null,
+            null
+        );
+    }
+    
+    public static ApiError withValidationErrors(HttpStatus status, String message, 
+                                               String path, List<ValidationError> validationErrors) {
+        return new ApiError(
+            status,
+            status.value(),
+            status.getReasonPhrase(),
+            message,
+            path,
+            LocalDateTime.now(),
+            validationErrors,
+            null
+        );
+    }
+    
+    public static ApiError withDetails(HttpStatus status, String message, 
+                                      String path, Map<String, Object> details) {
+        return new ApiError(
+            status,
+            status.value(),
+            status.getReasonPhrase(),
+            message,
+            path,
+            LocalDateTime.now(),
+            null,
+            details
+        );
+    }
+}
+```
+
+Create `src/main/java/com/kousenit/shopping/dto/ValidationError.java`:
+
+```java
+package com.kousenit.shopping.dto;
+
+public record ValidationError(
+    String field,
+    Object rejectedValue,
+    String message,
+    String code
+) {
+    
+    public static ValidationError of(String field, Object rejectedValue, String message) {
+        return new ValidationError(field, rejectedValue, message, null);
+    }
+    
+    public static ValidationError of(String field, Object rejectedValue, String message, String code) {
+        return new ValidationError(field, rejectedValue, message, code);
+    }
+}
+```
+
+### Step 7.2: Create the Global Exception Handler
+
+Create `src/main/java/com/kousenit/shopping/controllers/GlobalExceptionHandler.java`:
+
+```java
+package com.kousenit.shopping.controllers;
+
+import com.kousenit.shopping.dto.ApiError;
+import com.kousenit.shopping.dto.ValidationError;
+import com.kousenit.shopping.exceptions.InsufficientStockException;
+import com.kousenit.shopping.exceptions.ProductNotFoundException;
+import com.kousenit.shopping.exceptions.ProductValidationException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import java.net.URI;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final String VALIDATION_FAILED = "Validation failed";
+    private static final String INVALID_REQUEST = "Invalid request";
+    
+    // Domain-specific exceptions
+    
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleProductNotFoundException(
+            ProductNotFoundException ex, HttpServletRequest request) {
+        
+        logger.warn("Product not found: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+            HttpStatus.NOT_FOUND, ex.getMessage());
+        problemDetail.setType(URI.create("https://api.shopping.com/problems/product-not-found"));
+        problemDetail.setTitle("Product Not Found");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        
+        if (ex.getProductId() != null) {
+            problemDetail.setProperty("productId", ex.getProductId());
+        }
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
+    }
+    
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ProblemDetail> handleInsufficientStockException(
+            InsufficientStockException ex, HttpServletRequest request) {
+        
+        logger.warn("Insufficient stock: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setType(URI.create("https://api.shopping.com/problems/insufficient-stock"));
+        problemDetail.setTitle("Insufficient Stock");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        problemDetail.setProperty("productId", ex.getProductId());
+        problemDetail.setProperty("requestedQuantity", ex.getRequestedQuantity());
+        problemDetail.setProperty("availableQuantity", ex.getAvailableQuantity());
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+    
+    @ExceptionHandler(ProductValidationException.class)
+    public ResponseEntity<ProblemDetail> handleProductValidationException(
+            ProductValidationException ex, HttpServletRequest request) {
+        
+        logger.warn("Product validation error: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setType(URI.create("https://api.shopping.com/problems/validation-error"));
+        problemDetail.setTitle("Validation Error");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        
+        if (ex.getField() != null) {
+            problemDetail.setProperty("field", ex.getField());
+            problemDetail.setProperty("rejectedValue", ex.getValue());
+        }
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+    
+    // Bean validation exceptions
+    
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
+        
+        logger.warn("Validation failed for request: {}", ex.getMessage());
+        
+        List<ValidationError> validationErrors = ex.getBindingResult()
+            .getFieldErrors()
+            .stream()
+            .map(this::mapFieldError)
+            .collect(Collectors.toList());
+        
+        // Add global errors if any
+        ex.getBindingResult().getGlobalErrors().forEach(error -> {
+            validationErrors.add(ValidationError.of(
+                error.getObjectName(),
+                null,
+                error.getDefaultMessage(),
+                error.getCode()
+            ));
+        });
+        
+        ApiError apiError = ApiError.withValidationErrors(
+            HttpStatus.BAD_REQUEST,
+            VALIDATION_FAILED,
+            request.getRequestURI(),
+            validationErrors
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
+    }
+    
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiError> handleConstraintViolationException(
+            ConstraintViolationException ex, HttpServletRequest request) {
+        
+        logger.warn("Constraint violation: {}", ex.getMessage());
+        
+        List<ValidationError> validationErrors = ex.getConstraintViolations()
+            .stream()
+            .map(this::mapConstraintViolation)
+            .collect(Collectors.toList());
+        
+        ApiError apiError = ApiError.withValidationErrors(
+            HttpStatus.BAD_REQUEST,
+            VALIDATION_FAILED,
+            request.getRequestURI(),
+            validationErrors
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
+    }
+    
+    // Request processing exceptions
+    
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ProblemDetail> handleHttpMessageNotReadableException(
+            HttpMessageNotReadableException ex, HttpServletRequest request) {
+        
+        logger.warn("Malformed JSON request: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST, "Malformed JSON request");
+        problemDetail.setType(URI.create("https://api.shopping.com/problems/malformed-request"));
+        problemDetail.setTitle("Malformed Request");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+    
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ProblemDetail> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        
+        logger.warn("Type mismatch for parameter '{}': {}", ex.getName(), ex.getMessage());
+        
+        String message = String.format("Invalid value '%s' for parameter '%s'. Expected type: %s",
+            ex.getValue(), ex.getName(), ex.getRequiredType().getSimpleName());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST, message);
+        problemDetail.setType(URI.create("https://api.shopping.com/problems/type-mismatch"));
+        problemDetail.setTitle("Type Mismatch");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        problemDetail.setProperty("parameter", ex.getName());
+        problemDetail.setProperty("rejectedValue", ex.getValue());
+        problemDetail.setProperty("expectedType", ex.getRequiredType().getSimpleName());
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+    
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ProblemDetail> handleMissingServletRequestParameterException(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        
+        logger.warn("Missing required parameter: {}", ex.getParameterName());
+        
+        String message = String.format("Required parameter '%s' is missing", ex.getParameterName());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST, message);
+        problemDetail.setType(URI.create("https://api.shopping.com/problems/missing-parameter"));
+        problemDetail.setTitle("Missing Parameter");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        problemDetail.setProperty("parameter", ex.getParameterName());
+        problemDetail.setProperty("parameterType", ex.getParameterType());
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+    
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ProblemDetail> handleNoResourceFoundException(
+            NoResourceFoundException ex, HttpServletRequest request) {
+        
+        logger.warn("Resource not found: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+            HttpStatus.NOT_FOUND, "The requested resource was not found");
+        problemDetail.setType(URI.create("https://api.shopping.com/problems/resource-not-found"));
+        problemDetail.setTitle("Resource Not Found");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
+    }
+    
+    // Database exceptions
+    
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ProblemDetail> handleDataIntegrityViolationException(
+            DataIntegrityViolationException ex, HttpServletRequest request) {
+        
+        logger.error("Data integrity violation: {}", ex.getMessage());
+        
+        String message = "Data integrity violation. This operation conflicts with existing data constraints.";
+        
+        // Try to provide more specific messages for common violations
+        if (ex.getMessage() != null) {
+            if (ex.getMessage().contains("Unique index or primary key violation")) {
+                message = "A record with this information already exists.";
+            } else if (ex.getMessage().contains("constraint")) {
+                message = "This operation violates a data constraint.";
+            }
+        }
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+            HttpStatus.CONFLICT, message);
+        problemDetail.setType(URI.create("https://api.shopping.com/problems/data-integrity"));
+        problemDetail.setTitle("Data Integrity Violation");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problemDetail);
+    }
+    
+    // Generic exceptions
+    
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ProblemDetail> handleIllegalArgumentException(
+            IllegalArgumentException ex, HttpServletRequest request) {
+        
+        logger.warn("Illegal argument: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setType(URI.create("https://api.shopping.com/problems/illegal-argument"));
+        problemDetail.setTitle("Illegal Argument");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+    
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ProblemDetail> handleGenericException(
+            Exception ex, HttpServletRequest request) {
+        
+        logger.error("Unexpected error occurred", ex);
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR, 
+            "An unexpected error occurred. Please try again later.");
+        problemDetail.setType(URI.create("https://api.shopping.com/problems/internal-error"));
+        problemDetail.setTitle("Internal Server Error");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        
+        // Don't expose internal error details in production
+        if (logger.isDebugEnabled()) {
+            problemDetail.setProperty("debugMessage", ex.getMessage());
+        }
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
+    }
+    
+    // Helper methods
+    
+    private ValidationError mapFieldError(FieldError fieldError) {
+        return ValidationError.of(
+            fieldError.getField(),
+            fieldError.getRejectedValue(),
+            fieldError.getDefaultMessage(),
+            fieldError.getCode()
+        );
+    }
+    
+    private ValidationError mapConstraintViolation(ConstraintViolation<?> violation) {
+        String field = violation.getPropertyPath().toString();
+        return ValidationError.of(
+            field,
+            violation.getInvalidValue(),
+            violation.getMessage(),
+            null
+        );
+    }
+}
+```
+
+### Step 7.3: Test the Exception Handler
+
+Create `src/test/java/com/kousenit/shopping/controllers/GlobalExceptionHandlerTest.java`:
+
+```java
+package com.kousenit.shopping.controllers;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kousenit.shopping.dto.ProductRequest;
+import com.kousenit.shopping.exceptions.InsufficientStockException;
+import com.kousenit.shopping.exceptions.ProductNotFoundException;
+import com.kousenit.shopping.exceptions.ProductValidationException;
+import com.kousenit.shopping.services.ProductService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+
+import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest({ProductRestController.class, GlobalExceptionHandler.class})
+class GlobalExceptionHandlerTest {
+    
+    @Autowired
+    private MockMvc mockMvc;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
+    
+    @MockBean
+    private ProductService productService;
+    
+    @Test
+    void testProductNotFoundExceptionHandler() throws Exception {
+        // Given
+        when(productService.getProductById(999L))
+            .thenThrow(new ProductNotFoundException(999L));
+        
+        // When/Then
+        mockMvc.perform(get("/api/v1/products/999"))
+            .andExpect(status().isNotFound())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/product-not-found"))
+            .andExpect(jsonPath("$.title").value("Product Not Found"))
+            .andExpect(jsonPath("$.status").value(404))
+            .andExpect(jsonPath("$.detail").value("Product not found with id: 999"))
+            .andExpect(jsonPath("$.productId").value(999))
+            .andExpect(jsonPath("$.timestamp").exists());
+    }
+    
+    @Test
+    void testInsufficientStockExceptionHandler() throws Exception {
+        // Given
+        when(productService.reserveStock(1L, 50))
+            .thenThrow(new InsufficientStockException(1L, 50, 10));
+        
+        ProductRequest request = new ProductRequest(null, null, null, 50, null, null);
+        
+        // When/Then
+        mockMvc.perform(post("/api/v1/products/1/reserve-stock")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/insufficient-stock"))
+            .andExpect(jsonPath("$.title").value("Insufficient Stock"))
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.productId").value(1))
+            .andExpect(jsonPath("$.requestedQuantity").value(50))
+            .andExpect(jsonPath("$.availableQuantity").value(10));
+    }
+    
+    @Test
+    void testProductValidationExceptionHandler() throws Exception {
+        // Given
+        when(productService.createProduct(any()))
+            .thenThrow(new ProductValidationException("price", BigDecimal.ZERO, "Price must be positive"));
+        
+        ProductRequest invalidRequest = new ProductRequest(
+            "Test Product",
+            BigDecimal.ZERO,
+            "Description",
+            10,
+            "TST-123456",
+            "test@example.com"
+        );
+        
+        // When/Then
+        mockMvc.perform(post("/api/v1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidRequest)))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/validation-error"))
+            .andExpect(jsonPath("$.title").value("Validation Error"))
+            .andExpect(jsonPath("$.field").value("price"))
+            .andExpect(jsonPath("$.rejectedValue").value(0));
+    }
+    
+    @Test
+    void testMethodArgumentNotValidExceptionHandler() throws Exception {
+        // Given - request with validation errors
+        ProductRequest invalidRequest = new ProductRequest(
+            "", // blank name - violates @NotBlank
+            new BigDecimal("-10.00"), // negative price - violates @DecimalMin
+            "A".repeat(501), // too long description - violates @Size
+            -5, // negative quantity - violates @Min
+            "INVALID-SKU", // invalid SKU format - violates @Pattern
+            "not-an-email" // invalid email - violates @Email
+        );
+        
+        // When/Then
+        mockMvc.perform(post("/api/v1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidRequest)))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.status").value("BAD_REQUEST"))
+            .andExpect(jsonPath("$.statusCode").value(400))
+            .andExpect(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.validationErrors").isArray())
+            .andExpect(jsonPath("$.validationErrors", hasSize(greaterThan(0))))
+            .andExpect(jsonPath("$.validationErrors[*].field", hasItems("name", "price", "description", "quantity", "sku", "contactEmail")));
+    }
+    
+    @Test
+    void testHttpMessageNotReadableExceptionHandler() throws Exception {
+        // Given - malformed JSON
+        String malformedJson = "{ invalid json }";
+        
+        // When/Then
+        mockMvc.perform(post("/api/v1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(malformedJson))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/malformed-request"))
+            .andExpect(jsonPath("$.title").value("Malformed Request"))
+            .andExpect(jsonPath("$.detail").value("Malformed JSON request"));
+    }
+    
+    @Test
+    void testMethodArgumentTypeMismatchExceptionHandler() throws Exception {
+        // Given - invalid ID type (string instead of long)
+        
+        // When/Then
+        mockMvc.perform(get("/api/v1/products/invalid-id"))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/type-mismatch"))
+            .andExpect(jsonPath("$.title").value("Type Mismatch"))
+            .andExpect(jsonPath("$.parameter").value("id"))
+            .andExpect(jsonPath("$.rejectedValue").value("invalid-id"))
+            .andExpect(jsonPath("$.expectedType").value("Long"));
+    }
+    
+    @Test
+    void testMissingServletRequestParameterExceptionHandler() throws Exception {
+        // Given - missing required parameter
+        
+        // When/Then
+        mockMvc.perform(get("/api/v1/products/price-range?minPrice=100"))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/missing-parameter"))
+            .andExpect(jsonPath("$.title").value("Missing Parameter"))
+            .andExpect(jsonPath("$.parameter").value("maxPrice"));
+    }
+    
+    @Test
+    void testNoResourceFoundExceptionHandler() throws Exception {
+        // Given - non-existent endpoint
+        
+        // When/Then
+        mockMvc.perform(get("/api/v1/non-existent-endpoint"))
+            .andExpect(status().isNotFound())
+            .andExpected(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/resource-not-found"))
+            .andExpect(jsonPath("$.title").value("Resource Not Found"));
+    }
+    
+    @Test
+    void testGenericExceptionHandler() throws Exception {
+        // Given
+        when(productService.getProductById(anyLong()))
+            .thenThrow(new RuntimeException("Unexpected error"));
+        
+        // When/Then
+        mockMvc.perform(get("/api/v1/products/1"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/internal-error"))
+            .andExpect(jsonPath("$.title").value("Internal Server Error"))
+            .andExpect(jsonPath("$.status").value(500))
+            .andExpected(jsonPath("$.detail").value("An unexpected error occurred. Please try again later."));
+    }
+}
+```
+
+### Step 7.4: Integration Tests for Exception Handling
+
+Create `src/test/java/com/kousenit/shopping/controllers/ExceptionHandlingIntegrationTest.java`:
+
+```java
+package com.kousenit.shopping.controllers;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kousenit.shopping.dto.ProductRequest;
+import com.kousenit.shopping.dto.StockUpdateRequest;
+import com.kousenit.shopping.entities.Product;
+import com.kousenit.shopping.repositories.ProductRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureWebMvc
+@ActiveProfiles("test")
+@Transactional
+class ExceptionHandlingIntegrationTest {
+    
+    @Autowired
+    private MockMvc mockMvc;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
+    
+    @Autowired
+    private ProductRepository productRepository;
+    
+    @BeforeEach
+    void setUp() {
+        productRepository.deleteAll();
+    }
+    
+    @Test
+    void testRealProductNotFoundScenario() throws Exception {
+        // Verify database is empty
+        assertThat(productRepository.count()).isEqualTo(0);
+        
+        // When/Then
+        mockMvc.perform(get("/api/v1/products/999"))
+            .andExpect(status().isNotFound())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/product-not-found"))
+            .andExpect(jsonPath("$.productId").value(999));
+    }
+    
+    @Test
+    void testRealInsufficientStockScenario() throws Exception {
+        // Create a product with limited stock
+        Product product = new Product();
+        product.setName("Limited Stock Product");
+        product.setPrice(new BigDecimal("99.99"));
+        product.setQuantity(5);
+        product.setSku("LMT-123456");
+        product.setContactEmail("test@example.com");
+        
+        Product saved = productRepository.save(product);
+        
+        // Try to reserve more stock than available
+        StockUpdateRequest request = new StockUpdateRequest(10);
+        
+        mockMvc.perform(post("/api/v1/products/" + saved.getId() + "/reserve-stock")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/insufficient-stock"))
+            .andExpect(jsonPath("$.productId").value(saved.getId()))
+            .andExpect(jsonPath("$.requestedQuantity").value(10))
+            .andExpect(jsonPath("$.availableQuantity").value(5));
+    }
+    
+    @Test
+    void testRealValidationErrorScenario() throws Exception {
+        // Create product with multiple validation errors
+        ProductRequest invalidRequest = new ProductRequest(
+            "", // blank name
+            new BigDecimal("0.00"), // zero price
+            null, // null description is OK
+            -1, // negative quantity
+            "INVALID", // invalid SKU
+            "not-email" // invalid email
+        );
+        
+        mockMvc.perform(post("/api/v1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidRequest)))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.status").value("BAD_REQUEST"))
+            .andExpected(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.validationErrors").isArray())
+            .andExpect(jsonPath("$.validationErrors[?(@.field == 'name')]").exists())
+            .andExpect(jsonPath("$.validationErrors[?(@.field == 'price')]").exists())
+            .andExpect(jsonPath("$.validationErrors[?(@.field == 'quantity')]").exists())
+            .andExpect(jsonPath("$.validationErrors[?(@.field == 'sku')]").exists())
+            .andExpect(jsonPath("$.validationErrors[?(@.field == 'contactEmail')]").exists());
+    }
+    
+    @Test
+    void testRealDuplicateSkuScenario() throws Exception {
+        // Create first product
+        Product existingProduct = new Product();
+        existingProduct.setName("Existing Product");
+        existingProduct.setPrice(new BigDecimal("99.99"));
+        existingProduct.setQuantity(10);
+        existingProduct.setSku("DUP-123456");
+        existingProduct.setContactEmail("existing@example.com");
+        
+        productRepository.save(existingProduct);
+        
+        // Try to create second product with same SKU
+        ProductRequest duplicateRequest = new ProductRequest(
+            "Duplicate Product",
+            new BigDecimal("149.99"),
+            "Another product",
+            5,
+            "DUP-123456", // Same SKU
+            "duplicate@example.com"
+        );
+        
+        mockMvc.perform(post("/api/v1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(duplicateRequest)))
+            .andExpect(status().isConflict())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/data-integrity"))
+            .andExpect(jsonPath("$.title").value("Data Integrity Violation"));
+    }
+    
+    @Test
+    void testSuccessfulRequestAfterErrorHandling() throws Exception {
+        // First, make a request that causes an error
+        mockMvc.perform(get("/api/v1/products/999"))
+            .andExpect(status().isNotFound());
+        
+        // Then, make a successful request to verify the application still works
+        ProductRequest validRequest = new ProductRequest(
+            "Valid Product",
+            new BigDecimal("99.99"),
+            "A valid product",
+            10,
+            "VAL-123456",
+            "valid@example.com"
+        );
+        
+        mockMvc.perform(post("/api/v1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validRequest)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("Valid Product"));
+        
+        // Verify the product was actually created
+        assertThat(productRepository.count()).isEqualTo(1);
+    }
+}
+```
+
+### Step 7.5: Run Exception Handler Tests
+
+```bash
+# Run exception handler unit tests
+./gradlew test --tests GlobalExceptionHandlerTest
+
+# Run exception handling integration tests
+./gradlew test --tests ExceptionHandlingIntegrationTest
+
+# Run all tests to verify everything still works
+./gradlew test
+
+# Start the application to test error handling manually
+./gradlew bootRun
+```
+
+### Step 7.6: Manual Error Testing
+
+Test the exception handling with curl:
+
+```bash
+# Test ProductNotFoundException
+curl "http://localhost:8080/api/v1/products/999"
+
+# Test validation errors
+curl -X POST "http://localhost:8080/api/v1/products" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "",
+       "price": -10,
+       "quantity": -5,
+       "sku": "INVALID",
+       "contactEmail": "not-an-email"
+     }'
+
+# Test malformed JSON
+curl -X POST "http://localhost:8080/api/v1/products" \
+     -H "Content-Type: application/json" \
+     -d '{ invalid json'
+
+# Test type mismatch
+curl "http://localhost:8080/api/v1/products/not-a-number"
+
+# Test missing parameter
+curl "http://localhost:8080/api/v1/products/price-range?minPrice=100"
+
+# Test non-existent endpoint
+curl "http://localhost:8080/api/v1/non-existent"
+```
+
+### Step 7.7: Update application.yml for ProblemDetail
+
+Add ProblemDetail configuration to `application.yml`:
+
+```yaml
+spring:
+  mvc:
+    problemdetails:
+      enabled: true
+  
+  web:
+    problemdetails:
+      enabled: true
+
+server:
+  error:
+    include-stacktrace: never
+    include-exception: false
+    include-message: always
+```
+
+**Key Learning Points:**
+- **@RestControllerAdvice**: Global exception handling across all controllers
+- **ProblemDetail**: RFC 7807 standard for HTTP API error responses
+- **Exception Hierarchy**: Handling both domain-specific and framework exceptions
+- **Structured Error Responses**: Consistent error format with validation details
+- **Logging Strategy**: Appropriate log levels for different exception types
+- **Security Considerations**: Not exposing sensitive internal details
+- **Error Testing**: Comprehensive testing of error scenarios
+- **Client-Friendly Errors**: Meaningful error messages for API consumers
