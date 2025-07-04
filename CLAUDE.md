@@ -33,17 +33,19 @@ The lab instructions follow a **progressive implementation strategy**:
 ## Key Decisions Made
 
 ### Modern Spring Boot Patterns
-- **@MockitoBean**: Updated from deprecated @MockBean across all tests
-- **Lombok Integration**: Consistent use with IDE plugin requirements documented
+- **@MockitoBean**: Updated from deprecated @MockBean across all tests (Spring Boot 3.4+ modern approach)
+- **Lombok Integration**: Consistent use of `@Getter`, `@RequiredArgsConstructor`, `@Slf4j` for cleaner code
 - **YAML Configuration**: Single file with `---` profile separation
 - **RFC 7807 ProblemDetail**: Standardized error responses
 - **Profile-based Test Isolation**: Separate test database configuration
+- **Functional Programming**: Modern Java idioms for cleaner, more maintainable code
 
 ### Test Isolation Strategy (@DirtiesContext)
 - **Integration Test Design**: Uses `@DirtiesContext` for complete Spring context refresh
 - **Database Constraint Testing**: Enables testing real constraint violations (duplicate SKU → HTTP 409)
 - **Alternative Rejected**: `@Transactional` + `@Rollback(false)` causes Hibernate session conflicts
 - **Educational Value**: Shows proper enterprise test isolation patterns
+- **Modern Test Annotations**: `@MockitoBean` and `@Autowired Validator` replace legacy patterns
 
 ### Shopping Application Architecture
 - **Progressive Entity Design**: Start simple, add validation in Lab 4
@@ -51,6 +53,8 @@ The lab instructions follow a **progressive implementation strategy**:
 - **Custom Repository Queries**: Sophisticated Spring Data JPA patterns
 - **DTO Pattern**: Records for immutable request/response objects
 - **Production-Ready Configuration**: Comprehensive application.yml with logging and monitoring
+- **Exception Design**: Lombok-enhanced custom exceptions with proper field encapsulation
+- **Service Layer**: Direct service classes (no interfaces) following modern Spring Boot conventions
 
 ## Common Commands
 
@@ -162,7 +166,9 @@ void shouldReturnGreeting() {
 }
 ```
 
-### Integration Testing with Database Constraints
+### Modern Spring Boot Testing Patterns
+
+#### Integration Testing with Database Constraints
 
 ```java
 /**
@@ -220,6 +226,68 @@ class ShoppingApplicationIntegrationTest {
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.status").value(409))
             .andExpect(jsonPath("$.title").value("Duplicate SKU"));
+    }
+}
+```
+
+#### Service Layer Testing with Modern Annotations
+
+```java
+@SpringBootTest
+@ActiveProfiles("test")
+class ProductServiceTest {
+    
+    @MockitoBean
+    private ProductRepository productRepository;
+    
+    @Autowired
+    private ProductService productService;
+    
+    @Test
+    @DisplayName("Should create product successfully")
+    void testCreateProductSuccess() {
+        // Given
+        ProductRequest request = new ProductRequest(
+            "Test Product", new BigDecimal("99.99"), 
+            "Description", 10, "TST-123456", "test@example.com"
+        );
+        when(productRepository.save(any(Product.class))).thenReturn(savedProduct);
+        
+        // When
+        ProductResponse result = productService.createProduct(request);
+        
+        // Then
+        assertThat(result.name()).isEqualTo("Test Product");
+        verify(productRepository).save(any(Product.class));
+    }
+}
+```
+
+#### Entity Validation Testing
+
+```java
+@SpringBootTest
+@ActiveProfiles("test")
+class ProductTest {
+    
+    @Autowired
+    private Validator validator;
+    
+    @Test
+    @DisplayName("Should fail validation when name is blank")
+    void testInvalidProductBlankName() {
+        Product product = createValidProduct();
+        product.setName("");
+        
+        Set<ConstraintViolation<Product>> violations = validator.validate(product);
+        
+        assertThat(violations).hasSize(2); // Both @NotBlank and @Size
+        assertThat(violations)
+            .extracting(ConstraintViolation::getMessage)
+            .containsExactlyInAnyOrder(
+                "Product name is required",
+                "Product name must be between 3 and 100 characters"
+            );
     }
 }
 ```
@@ -390,12 +458,78 @@ curl http://api.open-notify.org/astros.json
 ### Records (Java 17+)
 
 ```java
-public record User(
+// DTO Pattern with Records
+public record ProductRequest(
+    String name,
+    BigDecimal price,
+    String description,
+    Integer quantity,
+    String sku,
+    String contactEmail
+) {}
+
+public record ProductResponse(
     Long id,
     String name,
-    String email,
-    Address address
+    BigDecimal price,
+    String description,
+    Integer quantity,
+    String sku,
+    String contactEmail,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
 ) {}
+```
+
+### Lombok Patterns
+
+```java
+@Entity
+@Table(name = "products")
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Product {
+    // Fields with validation annotations
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @NotBlank(message = "Product name is required")
+    private String name;
+    // ... other fields
+}
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ProductService {
+    private final ProductRepository productRepository;
+    
+    public ProductResponse createProduct(ProductRequest request) {
+        log.info("Creating product with SKU: {}", request.sku());
+        // Implementation...
+    }
+}
+```
+
+### Exception Handling with Lombok
+
+```java
+@Getter
+public class ProductNotFoundException extends RuntimeException {
+    private final Long productId;
+    
+    public ProductNotFoundException(String message) {
+        super(message);
+        this.productId = null;
+    }
+    
+    public ProductNotFoundException(String message, Long productId) {
+        super(message);
+        this.productId = productId;
+    }
+}
 ```
 
 ### Text Blocks (Java 17+)

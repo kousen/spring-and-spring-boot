@@ -1,5 +1,8 @@
 package com.kousenit.shopping.exceptions;
 
+import lombok.Getter;
+
+@Getter
 public class ProductNotFoundException extends RuntimeException {
     private final Long productId;
     
@@ -12,8 +15,5 @@ public class ProductNotFoundException extends RuntimeException {
         super(message);
         this.productId = null;
     }
-    
-    public Long getProductId() {
-        return productId;
-    }
+
 }

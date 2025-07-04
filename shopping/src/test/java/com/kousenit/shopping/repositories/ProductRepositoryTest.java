@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -107,8 +108,7 @@ class ProductRepositoryTest {
         List<Product> products = productRepository.findLowStockProducts(20);
         
         assertThat(products).hasSize(2);
-        assertThat(products).isSortedAccordingTo((p1, p2) -> 
-            p1.getQuantity().compareTo(p2.getQuantity()));
+        assertThat(products).isSortedAccordingTo(Comparator.comparing(Product::getQuantity));
     }
     
     @Test

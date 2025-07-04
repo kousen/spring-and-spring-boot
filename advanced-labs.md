@@ -897,28 +897,25 @@ Create `src/test/java/com/kousenit/shopping/entities/ProductValidationTest.java`
 package com.kousenit.shopping.entities;
 
 import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SpringBootTest
+@ActiveProfiles("test")
 class ProductValidationTest {
     
+    @Autowired
     private Validator validator;
-    
-    @BeforeEach
-    void setUp() {
-        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-        validator = factory.getValidator();
-    }
     
     @Test
     void testValidProduct() {
@@ -941,10 +938,13 @@ class ProductValidationTest {
         
         Set<ConstraintViolation<Product>> violations = validator.validate(product);
         
-        assertThat(violations).hasSize(1);
-        ConstraintViolation<Product> violation = violations.iterator().next();
-        assertThat(violation.getMessage()).isEqualTo("Product name cannot be blank");
-        assertThat(violation.getPropertyPath().toString()).isEqualTo("name");
+        assertThat(violations).hasSize(2); // Both @NotBlank and @Size are triggered
+        assertThat(violations)
+            .extracting(ConstraintViolation::getMessage)
+            .containsExactlyInAnyOrder(
+                "Product name is required",
+                "Product name must be between 3 and 100 characters"
+            );
     }
     
     @Test
@@ -955,7 +955,7 @@ class ProductValidationTest {
         
         assertThat(violations).hasSize(1);
         assertThat(violations.iterator().next().getMessage())
-            .isEqualTo("Product name must be between 2 and 100 characters");
+            .isEqualTo("Product name must be between 3 and 100 characters");
     }
     
     @Test
@@ -967,7 +967,7 @@ class ProductValidationTest {
         
         assertThat(violations).hasSize(1);
         assertThat(violations.iterator().next().getMessage())
-            .isEqualTo("Product name must be between 2 and 100 characters");
+            .isEqualTo("Product name must be between 3 and 100 characters");
     }
     
     @Test
@@ -1335,6 +1335,9 @@ Create `src/main/java/com/kousenit/shopping/exceptions/ProductNotFoundException.
 ```java
 package com.kousenit.shopping.exceptions;
 
+import lombok.Getter;
+
+@Getter
 public class ProductNotFoundException extends RuntimeException {
     private final Long productId;
     
@@ -1345,10 +1348,7 @@ public class ProductNotFoundException extends RuntimeException {
     
     public ProductNotFoundException(String message) {
         super(message);
-    }
-    
-    public Long getProductId() {
-        return productId;
+        this.productId = null;
     }
 }
 ```
@@ -1358,28 +1358,17 @@ Create `src/main/java/com/kousenit/shopping/exceptions/ProductValidationExceptio
 ```java
 package com.kousenit.shopping.exceptions;
 
+import lombok.Getter;
+
+@Getter
 public class ProductValidationException extends RuntimeException {
     private final String field;
     private final Object value;
     
-    public ProductValidationException(String message) {
-        super(message);
-        this.field = null;
-        this.value = null;
-    }
-    
     public ProductValidationException(String field, Object value, String message) {
-        super(String.format("Invalid %s: %s. %s", field, value, message));
+        super(message);
         this.field = field;
         this.value = value;
-    }
-    
-    public String getField() {
-        return field;
-    }
-    
-    public Object getValue() {
-        return value;
     }
 }
 ```
@@ -1389,169 +1378,179 @@ Create `src/main/java/com/kousenit/shopping/exceptions/InsufficientStockExceptio
 ```java
 package com.kousenit.shopping.exceptions;
 
+import lombok.Getter;
+
+@Getter
 public class InsufficientStockException extends RuntimeException {
     private final Long productId;
-    private final int requestedQuantity;
-    private final int availableQuantity;
+    private final Integer requestedQuantity;
+    private final Integer availableQuantity;
     
-    public InsufficientStockException(Long productId, int requestedQuantity, int availableQuantity) {
+    public InsufficientStockException(Long productId, Integer requestedQuantity, Integer availableQuantity) {
         super(String.format("Insufficient stock for product %d. Requested: %d, Available: %d", 
               productId, requestedQuantity, availableQuantity));
         this.productId = productId;
         this.requestedQuantity = requestedQuantity;
         this.availableQuantity = availableQuantity;
     }
+}
+```
+
+### Step 5.2: Create DTO Classes
+
+First, create Data Transfer Objects (DTOs) for API requests and responses:
+
+Create `src/main/java/com/kousenit/shopping/dto/ProductRequest.java`:
+
+```java
+package com.kousenit.shopping.dto;
+
+import jakarta.validation.constraints.*;
+import java.math.BigDecimal;
+
+public record ProductRequest(
+    @NotBlank(message = "Product name is required")
+    @Size(min = 3, max = 100, message = "Product name must be between 3 and 100 characters")
+    String name,
     
-    public Long getProductId() {
-        return productId;
-    }
+    @DecimalMin(value = "0.01", message = "Price must be greater than 0")
+    @DecimalMax(value = "999999.99", message = "Price must be less than 1,000,000")
+    @NotNull(message = "Price is required")
+    BigDecimal price,
     
-    public int getRequestedQuantity() {
-        return requestedQuantity;
-    }
+    @Size(max = 500, message = "Description cannot exceed 500 characters")
+    String description,
     
-    public int getAvailableQuantity() {
-        return availableQuantity;
+    @Min(value = 0, message = "Quantity cannot be negative")
+    @NotNull(message = "Quantity is required")
+    Integer quantity,
+    
+    @NotBlank(message = "SKU is required")
+    @Pattern(regexp = "^[A-Z]{3}-[0-9]{6}$", 
+             message = "SKU must follow the pattern: 3 uppercase letters, hyphen, 6 digits (e.g., ABC-123456)")
+    String sku,
+    
+    @Email(message = "Contact email must be a valid email address")
+    String contactEmail
+) {}
+```
+
+Create `src/main/java/com/kousenit/shopping/dto/ProductResponse.java`:
+
+```java
+package com.kousenit.shopping.dto;
+
+import com.kousenit.shopping.entities.Product;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+public record ProductResponse(
+    Long id,
+    String name,
+    BigDecimal price,
+    String description,
+    Integer quantity,
+    String sku,
+    String contactEmail,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
+) {
+    public static ProductResponse from(Product product) {
+        return new ProductResponse(
+            product.getId(),
+            product.getName(),
+            product.getPrice(),
+            product.getDescription(),
+            product.getQuantity(),
+            product.getSku(),
+            product.getContactEmail(),
+            product.getCreatedAt(),
+            product.getUpdatedAt()
+        );
     }
 }
 ```
 
-### Step 5.2: Create the ProductService Interface
+Create `src/main/java/com/kousenit/shopping/dto/StockUpdateRequest.java`:
+
+```java
+package com.kousenit.shopping.dto;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
+public record StockUpdateRequest(
+    @NotNull(message = "Quantity is required")
+    @Min(value = 0, message = "Quantity cannot be negative")
+    Integer quantity
+) {}
+```
+
+### Step 5.3: Create the ProductService
 
 Create `src/main/java/com/kousenit/shopping/services/ProductService.java`:
 
 ```java
 package com.kousenit.shopping.services;
 
-import com.kousenit.shopping.entities.Product;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-
-public interface ProductService {
-    
-    // Basic CRUD operations
-    Product createProduct(Product product);
-    Optional<Product> getProductById(Long id);
-    Product getProductByIdOrThrow(Long id);
-    List<Product> getAllProducts();
-    Page<Product> getAllProducts(Pageable pageable);
-    Product updateProduct(Long id, Product productUpdates);
-    void deleteProduct(Long id);
-    
-    // Business operations
-    List<Product> searchProductsByName(String name);
-    List<Product> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice);
-    List<Product> getProductsUnderPrice(BigDecimal maxPrice);
-    Optional<Product> getMostExpensiveProduct();
-    
-    // Stock management
-    Product updateStock(Long productId, int quantity);
-    Product reserveStock(Long productId, int quantity);
-    Product releaseStock(Long productId, int quantity);
-    
-    // Batch operations (demonstrating transactions)
-    List<Product> createProducts(List<Product> products);
-    void updatePrices(List<Long> productIds, BigDecimal priceMultiplier);
-    void deleteProducts(List<Long> productIds);
-    
-    // Business logic
-    boolean isProductAvailable(Long productId);
-    boolean isProductInStock(Long productId, int requiredQuantity);
-    long countProductsInPriceRange(BigDecimal minPrice, BigDecimal maxPrice);
-    
-    // Data initialization
-    void initializeDatabase();
-}
-```
-
-### Step 5.3: Implement the ProductService
-
-Create `src/main/java/com/kousenit/shopping/services/ProductServiceImpl.java`:
-
-```java
-package com.kousenit.shopping.services;
-
+import com.kousenit.shopping.dto.ProductRequest;
+import com.kousenit.shopping.dto.ProductResponse;
 import com.kousenit.shopping.entities.Product;
 import com.kousenit.shopping.exceptions.InsufficientStockException;
 import com.kousenit.shopping.exceptions.ProductNotFoundException;
 import com.kousenit.shopping.exceptions.ProductValidationException;
 import com.kousenit.shopping.repositories.ProductRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 @Service
-@Transactional(readOnly = true) // Default for all methods
-public class ProductServiceImpl implements ProductService {
-    
-    private static final Logger logger = LoggerFactory.getLogger(ProductServiceImpl.class);
+@Transactional(readOnly = true)
+@RequiredArgsConstructor
+@Slf4j
+public class ProductService {
     
     private final ProductRepository productRepository;
     
-    @Autowired
-    public ProductServiceImpl(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
-    
-    @Override
-    @Transactional // Write operation - overrides readOnly=true
-    public Product createProduct(Product product) {
-        logger.info("Creating new product: {}", product.getName());
+    @Transactional
+    public ProductResponse createProduct(ProductRequest request) {
+        log.info("Creating new product: {}", request.name());
         
-        validateProduct(product);
-        
-        // Check for duplicate SKU
-        if (product.getSku() != null && productRepository.existsByNameIgnoreCase(product.getSku())) {
-            throw new ProductValidationException("sku", product.getSku(), "SKU already exists");
-        }
+        Product product = new Product();
+        product.setName(request.name());
+        product.setPrice(request.price());
+        product.setDescription(request.description());
+        product.setQuantity(request.quantity());
+        product.setSku(request.sku());
+        product.setContactEmail(request.contactEmail());
         
         Product saved = productRepository.save(product);
-        logger.info("Created product with ID: {}", saved.getId());
-        return saved;
+        log.info("Created product with ID: {}", saved.getId());
+        return ProductResponse.from(saved);
     }
     
-    @Override
-    public Optional<Product> getProductById(Long id) {
-        logger.debug("Fetching product with ID: {}", id);
-        return productRepository.findById(id);
-    }
-    
-    @Override
-    public Product getProductByIdOrThrow(Long id) {
-        return getProductById(id)
+    public ProductResponse getProductById(Long id) {
+        log.info("Fetching product with id: {}", id);
+        Product product = productRepository.findById(id)
             .orElseThrow(() -> new ProductNotFoundException(id));
+        return ProductResponse.from(product);
     }
     
-    @Override
-    public List<Product> getAllProducts() {
-        logger.debug("Fetching all products");
-        return productRepository.findAll();
+    public Page<ProductResponse> getAllProducts(Pageable pageable) {
+        log.info("Fetching all products with pagination: {}", pageable);
+        return productRepository.findAll(pageable)
+            .map(ProductResponse::from);
     }
     
-    @Override
-    public Page<Product> getAllProducts(Pageable pageable) {
-        logger.debug("Fetching products page: {}", pageable);
-        return productRepository.findAll(pageable);
-    }
-    
-    @Override
     @Transactional
     public Product updateProduct(Long id, Product productUpdates) {
-        logger.info("Updating product with ID: {}", id);
+        log.info("Updating product with ID: {}", id);
         
         Product existingProduct = getProductByIdOrThrow(id);
         
@@ -1577,32 +1576,29 @@ public class ProductServiceImpl implements ProductService {
         
         validateProduct(existingProduct);
         Product updated = productRepository.save(existingProduct);
-        logger.info("Updated product: {}", updated.getName());
+        log.info("Updated product: {}", updated.getName());
         return updated;
     }
     
-    @Override
     @Transactional
     public void deleteProduct(Long id) {
-        logger.info("Deleting product with ID: {}", id);
+        log.info("Deleting product with ID: {}", id);
         
         if (!productRepository.existsById(id)) {
             throw new ProductNotFoundException(id);
         }
         
         productRepository.deleteById(id);
-        logger.info("Deleted product with ID: {}", id);
+        log.info("Deleted product with ID: {}", id);
     }
     
-    @Override
     public List<Product> searchProductsByName(String name) {
-        logger.debug("Searching products by name: {}", name);
+        log.debug("Searching products by name: {}", name);
         return productRepository.findByNameContainingIgnoreCase(name);
     }
     
-    @Override
     public List<Product> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
-        logger.debug("Fetching products in price range: {} - {}", minPrice, maxPrice);
+        log.debug("Fetching products in price range: {} - {}", minPrice, maxPrice);
         
         if (minPrice.compareTo(maxPrice) > 0) {
             throw new ProductValidationException("price range", 
@@ -1613,22 +1609,19 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.findByPriceBetween(minPrice, maxPrice);
     }
     
-    @Override
     public List<Product> getProductsUnderPrice(BigDecimal maxPrice) {
-        logger.debug("Fetching products under price: {}", maxPrice);
+        log.debug("Fetching products under price: {}", maxPrice);
         return productRepository.findProductsUnderPrice(maxPrice);
     }
     
-    @Override
     public Optional<Product> getMostExpensiveProduct() {
-        logger.debug("Fetching most expensive product");
+        log.debug("Fetching most expensive product");
         return productRepository.findMostExpensiveProduct();
     }
     
-    @Override
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     public Product updateStock(Long productId, int quantity) {
-        logger.info("Updating stock for product {}: {}", productId, quantity);
+        log.info("Updating stock for product {}: {}", productId, quantity);
         
         Product product = getProductByIdOrThrow(productId);
         
@@ -1638,14 +1631,13 @@ public class ProductServiceImpl implements ProductService {
         
         product.setQuantity(quantity);
         Product updated = productRepository.save(product);
-        logger.info("Updated stock for product {}: {}", productId, quantity);
+        log.info("Updated stock for product {}: {}", productId, quantity);
         return updated;
     }
     
-    @Override
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     public Product reserveStock(Long productId, int quantity) {
-        logger.info("Reserving stock for product {}: {}", productId, quantity);
+        log.info("Reserving stock for product {}: {}", productId, quantity);
         
         Product product = getProductByIdOrThrow(productId);
         
@@ -1655,39 +1647,36 @@ public class ProductServiceImpl implements ProductService {
         
         product.setQuantity(product.getQuantity() - quantity);
         Product updated = productRepository.save(product);
-        logger.info("Reserved {} units for product {}", quantity, productId);
+        log.info("Reserved {} units for product {}", quantity, productId);
         return updated;
     }
     
-    @Override
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     public Product releaseStock(Long productId, int quantity) {
-        logger.info("Releasing stock for product {}: {}", productId, quantity);
+        log.info("Releasing stock for product {}: {}", productId, quantity);
         
         Product product = getProductByIdOrThrow(productId);
         product.setQuantity(product.getQuantity() + quantity);
         Product updated = productRepository.save(product);
-        logger.info("Released {} units for product {}", quantity, productId);
+        log.info("Released {} units for product {}", quantity, productId);
         return updated;
     }
     
-    @Override
     @Transactional(propagation = Propagation.REQUIRED)
     public List<Product> createProducts(List<Product> products) {
-        logger.info("Creating {} products in batch", products.size());
+        log.info("Creating {} products in batch", products.size());
         
         // Validate all products first
         products.forEach(this::validateProduct);
         
         List<Product> savedProducts = productRepository.saveAll(products);
-        logger.info("Successfully created {} products", savedProducts.size());
+        log.info("Successfully created {} products", savedProducts.size());
         return savedProducts;
     }
     
-    @Override
     @Transactional
     public void updatePrices(List<Long> productIds, BigDecimal priceMultiplier) {
-        logger.info("Updating prices for {} products with multiplier: {}", productIds.size(), priceMultiplier);
+        log.info("Updating prices for {} products with multiplier: {}", productIds.size(), priceMultiplier);
         
         if (priceMultiplier.compareTo(BigDecimal.ZERO) <= 0) {
             throw new ProductValidationException("priceMultiplier", priceMultiplier, 
@@ -1699,16 +1688,15 @@ public class ProductServiceImpl implements ProductService {
             BigDecimal newPrice = product.getPrice().multiply(priceMultiplier);
             product.setPrice(newPrice);
             productRepository.save(product);
-            logger.debug("Updated price for product {}: {}", productId, newPrice);
+            log.debug("Updated price for product {}: {}", productId, newPrice);
         }
         
-        logger.info("Completed price update for {} products", productIds.size());
+        log.info("Completed price update for {} products", productIds.size());
     }
     
-    @Override
     @Transactional
     public void deleteProducts(List<Long> productIds) {
-        logger.info("Deleting {} products", productIds.size());
+        log.info("Deleting {} products", productIds.size());
         
         // Verify all products exist first
         for (Long productId : productIds) {
@@ -1719,33 +1707,29 @@ public class ProductServiceImpl implements ProductService {
         
         // Delete all products
         productRepository.deleteAllById(productIds);
-        logger.info("Successfully deleted {} products", productIds.size());
+        log.info("Successfully deleted {} products", productIds.size());
     }
     
-    @Override
     public boolean isProductAvailable(Long productId) {
         return productRepository.existsById(productId);
     }
     
-    @Override
     public boolean isProductInStock(Long productId, int requiredQuantity) {
         return getProductById(productId)
             .map(product -> product.getQuantity() >= requiredQuantity)
             .orElse(false);
     }
     
-    @Override
     public long countProductsInPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
         return productRepository.findByPriceBetween(minPrice, maxPrice).size();
     }
     
-    @Override
     @Transactional
     public void initializeDatabase() {
-        logger.info("Initializing database with sample products");
+        log.info("Initializing database with sample products");
         
         if (productRepository.count() > 0) {
-            logger.info("Database already contains {} products, skipping initialization", 
+            log.info("Database already contains {} products, skipping initialization", 
                 productRepository.count());
             return;
         }
@@ -1764,7 +1748,7 @@ public class ProductServiceImpl implements ProductService {
         );
         
         createProducts(sampleProducts);
-        logger.info("Database initialization completed with {} products", sampleProducts.size());
+        log.info("Database initialization completed with {} products", sampleProducts.size());
     }
     
     private void validateProduct(Product product) {
@@ -1798,6 +1782,13 @@ public class ProductServiceImpl implements ProductService {
     }
 }
 ```
+
+**Note on Modern Spring Boot Patterns:**
+The service implementation above demonstrates several modern Spring Boot patterns:
+- **Direct service classes** instead of interface/implementation separation (simpler for most applications)
+- **Lombok annotations** (`@RequiredArgsConstructor`, `@Slf4j`) for cleaner code
+- **DTO pattern** with records for API boundaries
+- **Method chaining** with fluent API style
 
 ### Step 5.4: Update AppConfig to Use Service
 
@@ -1864,10 +1855,10 @@ import com.kousenit.shopping.exceptions.ProductValidationException;
 import com.kousenit.shopping.repositories.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -1879,14 +1870,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 class ProductServiceTest {
     
-    @Mock
+    @MockitoBean
     private ProductRepository productRepository;
     
-    @InjectMocks
-    private ProductServiceImpl productService;
+    @Autowired
+    private ProductService productService;
     
     private Product sampleProduct;
     
@@ -2469,7 +2461,7 @@ public class ProductRestController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection) {
         
-        logger.debug("Fetching products: page={}, size={}, sortBy={}, direction={}", 
+        log.debug("Fetching products: page={}, size={}, sortBy={}, direction={}", 
                     page, size, sortBy, sortDirection);
         
         Sort.Direction direction = Sort.Direction.fromString(sortDirection);
@@ -2484,7 +2476,7 @@ public class ProductRestController {
     // GET /api/v1/products/{id} - Get product by ID
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
-        logger.debug("Fetching product with ID: {}", id);
+        log.debug("Fetching product with ID: {}", id);
         
         return productService.getProductById(id)
             .map(ProductResponse::from)
@@ -2495,7 +2487,7 @@ public class ProductRestController {
     // POST /api/v1/products - Create new product
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody ProductRequest request) {
-        logger.info("Creating new product: {}", request.name());
+        log.info("Creating new product: {}", request.name());
         
         Product product = mapToEntity(request);
         Product created = productService.createProduct(product);
@@ -2516,7 +2508,7 @@ public class ProductRestController {
             @PathVariable Long id, 
             @Valid @RequestBody ProductRequest request) {
         
-        logger.info("Updating product with ID: {}", id);
+        log.info("Updating product with ID: {}", id);
         
         Product updates = mapToEntity(request);
         Product updated = productService.updateProduct(id, updates);
@@ -2531,7 +2523,7 @@ public class ProductRestController {
             @PathVariable Long id, 
             @RequestBody ProductRequest request) {
         
-        logger.info("Partially updating product with ID: {}", id);
+        log.info("Partially updating product with ID: {}", id);
         
         Product updates = mapToEntityPartial(request);
         Product updated = productService.updateProduct(id, updates);
@@ -2543,7 +2535,7 @@ public class ProductRestController {
     // DELETE /api/v1/products/{id} - Delete product
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        logger.info("Deleting product with ID: {}", id);
+        log.info("Deleting product with ID: {}", id);
         
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
@@ -2554,7 +2546,7 @@ public class ProductRestController {
     public ResponseEntity<List<ProductResponse>> searchProducts(
             @RequestParam String name) {
         
-        logger.debug("Searching products by name: {}", name);
+        log.debug("Searching products by name: {}", name);
         
         List<Product> products = productService.searchProductsByName(name);
         List<ProductResponse> response = products.stream()
@@ -2570,7 +2562,7 @@ public class ProductRestController {
             @RequestParam BigDecimal minPrice,
             @RequestParam BigDecimal maxPrice) {
         
-        logger.debug("Fetching products in price range: {} - {}", minPrice, maxPrice);
+        log.debug("Fetching products in price range: {} - {}", minPrice, maxPrice);
         
         List<Product> products = productService.getProductsByPriceRange(minPrice, maxPrice);
         List<ProductResponse> response = products.stream()
@@ -2585,7 +2577,7 @@ public class ProductRestController {
     public ResponseEntity<List<ProductResponse>> getProductsUnderPrice(
             @RequestParam BigDecimal maxPrice) {
         
-        logger.debug("Fetching products under price: {}", maxPrice);
+        log.debug("Fetching products under price: {}", maxPrice);
         
         List<Product> products = productService.getProductsUnderPrice(maxPrice);
         List<ProductResponse> response = products.stream()
@@ -2598,7 +2590,7 @@ public class ProductRestController {
     // GET /api/v1/products/most-expensive - Get most expensive product
     @GetMapping("/most-expensive")
     public ResponseEntity<ProductResponse> getMostExpensiveProduct() {
-        logger.debug("Fetching most expensive product");
+        log.debug("Fetching most expensive product");
         
         return productService.getMostExpensiveProduct()
             .map(ProductResponse::from)
@@ -2611,7 +2603,7 @@ public class ProductRestController {
     public ResponseEntity<List<ProductResponse>> createProducts(
             @Valid @RequestBody List<ProductRequest> requests) {
         
-        logger.info("Creating {} products in batch", requests.size());
+        log.info("Creating {} products in batch", requests.size());
         
         List<Product> products = requests.stream()
             .map(this::mapToEntity)
@@ -2631,7 +2623,7 @@ public class ProductRestController {
             @PathVariable Long id,
             @Valid @RequestBody StockUpdateRequest request) {
         
-        logger.info("Updating stock for product {}: {}", id, request.quantity());
+        log.info("Updating stock for product {}: {}", id, request.quantity());
         
         Product updated = productService.updateStock(id, request.quantity());
         ProductResponse response = ProductResponse.from(updated);
@@ -2645,7 +2637,7 @@ public class ProductRestController {
             @PathVariable Long id,
             @Valid @RequestBody StockUpdateRequest request) {
         
-        logger.info("Reserving stock for product {}: {}", id, request.quantity());
+        log.info("Reserving stock for product {}: {}", id, request.quantity());
         
         Product updated = productService.reserveStock(id, request.quantity());
         ProductResponse response = ProductResponse.from(updated);
@@ -2659,7 +2651,7 @@ public class ProductRestController {
             @PathVariable Long id,
             @Valid @RequestBody StockUpdateRequest request) {
         
-        logger.info("Releasing stock for product {}: {}", id, request.quantity());
+        log.info("Releasing stock for product {}: {}", id, request.quantity());
         
         Product updated = productService.releaseStock(id, request.quantity());
         ProductResponse response = ProductResponse.from(updated);
@@ -2673,7 +2665,7 @@ public class ProductRestController {
             @PathVariable Long id,
             @RequestParam int requiredQuantity) {
         
-        logger.debug("Checking stock for product {}: required {}", id, requiredQuantity);
+        log.debug("Checking stock for product {}: required {}", id, requiredQuantity);
         
         boolean inStock = productService.isProductInStock(id, requiredQuantity);
         return ResponseEntity.ok(inStock);
@@ -2685,7 +2677,7 @@ public class ProductRestController {
             @RequestParam List<Long> productIds,
             @Valid @RequestBody PriceUpdateRequest request) {
         
-        logger.info("Updating prices for {} products with multiplier: {}", 
+        log.info("Updating prices for {} products with multiplier: {}", 
                    productIds.size(), request.priceMultiplier());
         
         productService.updatePrices(productIds, request.priceMultiplier());
@@ -2695,7 +2687,7 @@ public class ProductRestController {
     // DELETE /api/v1/products/batch - Delete multiple products
     @DeleteMapping("/batch")
     public ResponseEntity<Void> deleteProducts(@RequestParam List<Long> productIds) {
-        logger.info("Deleting {} products", productIds.size());
+        log.info("Deleting {} products", productIds.size());
         
         productService.deleteProducts(productIds);
         return ResponseEntity.noContent().build();
@@ -2883,7 +2875,7 @@ class ProductRestControllerTest {
         mockMvc.perform(put("/api/v1/products/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(sampleRequest)))
-            .andExpected(status().isOk())
+            .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(1))
             .andExpect(jsonPath("$.name").value("Test Product"));
         
@@ -3483,7 +3475,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleProductNotFoundException(
             ProductNotFoundException ex, HttpServletRequest request) {
         
-        logger.warn("Product not found: {}", ex.getMessage());
+        log.warn("Product not found: {}", ex.getMessage());
         
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.NOT_FOUND, ex.getMessage());
@@ -3503,7 +3495,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleInsufficientStockException(
             InsufficientStockException ex, HttpServletRequest request) {
         
-        logger.warn("Insufficient stock: {}", ex.getMessage());
+        log.warn("Insufficient stock: {}", ex.getMessage());
         
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.BAD_REQUEST, ex.getMessage());
@@ -3522,7 +3514,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleProductValidationException(
             ProductValidationException ex, HttpServletRequest request) {
         
-        logger.warn("Product validation error: {}", ex.getMessage());
+        log.warn("Product validation error: {}", ex.getMessage());
         
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.BAD_REQUEST, ex.getMessage());
@@ -3545,7 +3537,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
         
-        logger.warn("Validation failed for request: {}", ex.getMessage());
+        log.warn("Validation failed for request: {}", ex.getMessage());
         
         List<ValidationError> validationErrors = ex.getBindingResult()
             .getFieldErrors()
@@ -3577,7 +3569,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleConstraintViolationException(
             ConstraintViolationException ex, HttpServletRequest request) {
         
-        logger.warn("Constraint violation: {}", ex.getMessage());
+        log.warn("Constraint violation: {}", ex.getMessage());
         
         List<ValidationError> validationErrors = ex.getConstraintViolations()
             .stream()
@@ -3600,7 +3592,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleHttpMessageNotReadableException(
             HttpMessageNotReadableException ex, HttpServletRequest request) {
         
-        logger.warn("Malformed JSON request: {}", ex.getMessage());
+        log.warn("Malformed JSON request: {}", ex.getMessage());
         
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.BAD_REQUEST, "Malformed JSON request");
@@ -3616,7 +3608,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleMethodArgumentTypeMismatchException(
             MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
         
-        logger.warn("Type mismatch for parameter '{}': {}", ex.getName(), ex.getMessage());
+        log.warn("Type mismatch for parameter '{}': {}", ex.getName(), ex.getMessage());
         
         String message = String.format("Invalid value '%s' for parameter '%s'. Expected type: %s",
             ex.getValue(), ex.getName(), ex.getRequiredType().getSimpleName());
@@ -3638,7 +3630,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleMissingServletRequestParameterException(
             MissingServletRequestParameterException ex, HttpServletRequest request) {
         
-        logger.warn("Missing required parameter: {}", ex.getParameterName());
+        log.warn("Missing required parameter: {}", ex.getParameterName());
         
         String message = String.format("Required parameter '%s' is missing", ex.getParameterName());
         
@@ -3658,7 +3650,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleNoResourceFoundException(
             NoResourceFoundException ex, HttpServletRequest request) {
         
-        logger.warn("Resource not found: {}", ex.getMessage());
+        log.warn("Resource not found: {}", ex.getMessage());
         
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.NOT_FOUND, "The requested resource was not found");
@@ -3676,7 +3668,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleDataIntegrityViolationException(
             DataIntegrityViolationException ex, HttpServletRequest request) {
         
-        logger.error("Data integrity violation: {}", ex.getMessage());
+        log.error("Data integrity violation: {}", ex.getMessage());
         
         String message = "Data integrity violation. This operation conflicts with existing data constraints.";
         
@@ -3705,7 +3697,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleIllegalArgumentException(
             IllegalArgumentException ex, HttpServletRequest request) {
         
-        logger.warn("Illegal argument: {}", ex.getMessage());
+        log.warn("Illegal argument: {}", ex.getMessage());
         
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.BAD_REQUEST, ex.getMessage());
@@ -3721,7 +3713,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleGenericException(
             Exception ex, HttpServletRequest request) {
         
-        logger.error("Unexpected error occurred", ex);
+        log.error("Unexpected error occurred", ex);
         
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.INTERNAL_SERVER_ERROR, 
@@ -3947,7 +3939,7 @@ class GlobalExceptionHandlerTest {
         // When/Then
         mockMvc.perform(get("/api/v1/non-existent-endpoint"))
             .andExpect(status().isNotFound())
-            .andExpected(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
             .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/resource-not-found"))
             .andExpect(jsonPath("$.title").value("Resource Not Found"));
     }
@@ -3965,7 +3957,7 @@ class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/internal-error"))
             .andExpect(jsonPath("$.title").value("Internal Server Error"))
             .andExpect(jsonPath("$.status").value(500))
-            .andExpected(jsonPath("$.detail").value("An unexpected error occurred. Please try again later."));
+            .andExpect(jsonPath("$.detail").value("An unexpected error occurred. Please try again later."));
     }
 }
 ```
@@ -4075,7 +4067,7 @@ class ExceptionHandlingIntegrationTest {
             .andExpect(status().isBadRequest())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.status").value("BAD_REQUEST"))
-            .andExpected(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.message").value("Validation failed"))
             .andExpect(jsonPath("$.validationErrors").isArray())
             .andExpect(jsonPath("$.validationErrors[?(@.field == 'name')]").exists())
             .andExpect(jsonPath("$.validationErrors[?(@.field == 'price')]").exists())

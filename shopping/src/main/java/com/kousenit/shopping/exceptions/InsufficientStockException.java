@@ -1,5 +1,8 @@
 package com.kousenit.shopping.exceptions;
 
+import lombok.Getter;
+
+@Getter
 public class InsufficientStockException extends RuntimeException {
     private final Long productId;
     private final Integer requestedQuantity;
@@ -11,17 +14,5 @@ public class InsufficientStockException extends RuntimeException {
         this.productId = productId;
         this.requestedQuantity = requestedQuantity;
         this.availableQuantity = availableQuantity;
-    }
-    
-    public Long getProductId() {
-        return productId;
-    }
-    
-    public Integer getRequestedQuantity() {
-        return requestedQuantity;
-    }
-    
-    public Integer getAvailableQuantity() {
-        return availableQuantity;
     }
 }
