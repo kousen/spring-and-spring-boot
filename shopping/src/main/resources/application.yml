@@ -73,3 +73,27 @@ management:
   endpoint:
     health:
       show-details: always
+
+---
+# Test profile configuration
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:testdb
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+  
+logging:
+  level:
+    root: WARN
+    com.kousenit.shopping: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql: WARN
+    org.springframework.data: WARN

@@ -100,6 +100,8 @@ tasks.named('test') {
 
 ### Initial application.yml
 
+Create `src/main/resources/application.yml` with basic configuration that we'll expand in later labs:
+
 ```yaml
 spring:
   application:
@@ -107,9 +109,9 @@ spring:
   
   datasource:
     url: jdbc:h2:mem:shopping
+    driver-class-name: org.h2.Driver
     username: sa
     password: 
-    driver-class-name: org.h2.Driver
   
   h2:
     console:
@@ -120,29 +122,24 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
-    format-sql: true
     database-platform: org.hibernate.dialect.H2Dialect
-  
-  logging:
-    level:
-      org.hibernate.SQL: debug
-      org.hibernate.type.descriptor.sql.BasicBinder: trace
 
 server:
   port: 8080
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
 ```
 
 ## Lab 1: Create the Product Entity (POJO)
 
-**Objective**: Create a basic Product entity class that will serve as our domain model.
+**Objective**: Create a basic Product entity class that will serve as our domain model. We'll start with essential fields and build upon this foundation in later labs.
 
 **Why POJO and not Record**: We're using JPA, which requires mutable objects with default constructors and setters. Records are immutable and better suited for DTOs or value objects.
+
+**Using Lombok**: We'll use Lombok annotations to reduce boilerplate code while maintaining readability and focusing on the business logic.
+
+**⚠️ IDE Setup Required**: Lombok requires an IDE plugin to work properly:
+- **IntelliJ IDEA**: File → Settings → Plugins → Search "Lombok" → Install
+- **VS Code**: Install "Lombok Annotations Support for VS Code" extension
+- **Eclipse**: Download lombok.jar and run `java -jar lombok.jar` to install
 
 ### Step 1.1: Create the Basic Product Class
 
@@ -152,11 +149,18 @@ Create `src/main/java/com/kousenit/shopping/entities/Product.java`:
 package com.kousenit.shopping.entities;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
 import java.math.BigDecimal;
-import java.util.Objects;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Product {
     
     @Id
@@ -169,69 +173,49 @@ public class Product {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
     
-    // Default constructor (required by JPA)
-    public Product() {}
+    // Additional fields to be enhanced with validation in Lab 4
+    private String description;
+    private Integer quantity;
+    private String sku;
+    private String contactEmail;
     
-    // Constructor for creating new products (without ID)
-    public Product(String name, BigDecimal price) {
-        this.name = name;
-        this.price = price;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
     
-    // Constructor with all fields (useful for testing)
-    public Product(Long id, String name, BigDecimal price) {
-        this.id = id;
-        this.name = name;
-        this.price = price;
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
     
-    // Getters and setters
-    public Long getId() {
-        return id;
+    // Business methods for stock management
+    public boolean hasStock(int requestedQuantity) {
+        return this.quantity != null && this.quantity >= requestedQuantity;
     }
     
-    public void setId(Long id) {
-        this.id = id;
+    public void decrementStock(int amount) {
+        if (!hasStock(amount)) {
+            throw new IllegalArgumentException(
+                String.format("Cannot decrement stock by %d. Only %d available", amount, this.quantity)
+            );
+        }
+        this.quantity -= amount;
     }
     
-    public String getName() {
-        return name;
-    }
-    
-    public void setName(String name) {
-        this.name = name;
-    }
-    
-    public BigDecimal getPrice() {
-        return price;
-    }
-    
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Product product = (Product) o;
-        return Objects.equals(id, product.id) && 
-               Objects.equals(name, product.name) && 
-               Objects.equals(price, product.price);
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, name, price);
-    }
-    
-    @Override
-    public String toString() {
-        return "Product{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", price=" + price +
-                '}';
+    public void incrementStock(int amount) {
+        if (this.quantity == null) {
+            this.quantity = amount;
+        } else {
+            this.quantity += amount;
+        }
     }
 }
 ```
@@ -630,7 +614,7 @@ import com.kousenit.shopping.repositories.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
@@ -643,7 +627,7 @@ import static org.mockito.Mockito.*;
 @ActiveProfiles("integration") // Different profile to test initialization
 class DatabaseInitializationTest {
     
-    @MockBean
+    @MockitoBean
     private ProductRepository productRepository;
     
     @Autowired
@@ -749,47 +733,104 @@ class ShoppingApplicationTest {
 ./gradlew test --tests ShoppingApplicationTest
 ```
 
+### Step 3.4: Update application.yml with Test Profile Configuration
+
+Update `src/main/resources/application.yml` to add test profile configuration using YAML's `---` separator:
+
+```yaml
+spring:
+  application:
+    name: shopping
+  
+  datasource:
+    url: jdbc:h2:mem:shopping
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    database-platform: org.hibernate.dialect.H2Dialect
+
+server:
+  port: 8080
+
+---
+# Test profile configuration
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:testdb
+  jpa:
+    show-sql: false
+```
+
+**Why YAML Profile Separation:**
+- **Single File**: All profiles in one `application.yml` file
+- **`---` Separator**: Clearly separates different profile configurations
+- **Test Isolation**: Separate database and reduced logging for tests
+- **Maintainability**: Easier to manage than multiple property files
+
 **Key Learning Points:**
 - **CommandLineRunner**: Execute code after Spring Boot application startup
 - **@Profile Annotations**: Control bean creation based on active profiles
 - **Conditional Initialization**: Check database state before populating
 - **Separation of Concerns**: Configuration logic separate from business logic
 - **Test Profiles**: Prevent side effects during testing
+- **YAML Profiles**: Use `---` separator for profile-specific configuration
 - **Integration Testing**: Test actual application behavior with real dependencies
 
 ## Lab 4: Add Bean Validation Annotations
 
 **Objective**: Add comprehensive validation to the Product entity and test validation behavior at multiple layers.
 
-### Step 4.1: Enhanced Product Entity with Validation
+### Step 4.1: Enhanced Product Entity with Validation and Indexes
 
-Update `src/main/java/com/kousenit/shopping/entities/Product.java`:
+Update `src/main/java/com/kousenit/shopping/entities/Product.java` to match our final implementation:
 
 ```java
 package com.kousenit.shopping.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
 import java.math.BigDecimal;
-import java.util.Objects;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+    @Index(name = "idx_product_sku", columnList = "sku", unique = true),
+    @Index(name = "idx_product_name", columnList = "name")
+})
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Product {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @NotBlank(message = "Product name cannot be blank")
-    @Size(min = 2, max = 100, message = "Product name must be between 2 and 100 characters")
-    @Column(nullable = false, length = 100)
+    @NotBlank(message = "Product name is required")
+    @Size(min = 3, max = 100, message = "Product name must be between 3 and 100 characters")
+    @Column(nullable = false)
     private String name;
     
-    @NotNull(message = "Price cannot be null")
-    @DecimalMin(value = "0.01", message = "Price must be at least $0.01")
-    @DecimalMax(value = "99999.99", message = "Price cannot exceed $99,999.99")
-    @Digits(integer = 5, fraction = 2, message = "Price must be a valid monetary amount")
+    @DecimalMin(value = "0.01", message = "Price must be greater than 0")
+    @DecimalMax(value = "999999.99", message = "Price must be less than 1,000,000")
+    @NotNull(message = "Price is required")
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
     
@@ -798,88 +839,52 @@ public class Product {
     private String description;
     
     @Min(value = 0, message = "Quantity cannot be negative")
-    @Max(value = 10000, message = "Quantity cannot exceed 10,000")
+    @NotNull(message = "Quantity is required")
     @Column(nullable = false)
-    private Integer quantity = 0;
+    private Integer quantity;
     
-    @Pattern(regexp = "^[A-Z]{2,3}-\\d{3,6}$", 
-             message = "SKU must follow format: XX-123456 (2-3 letters, dash, 3-6 digits)")
-    @Column(unique = true, length = 20)
+    @NotBlank(message = "SKU is required")
+    @Pattern(regexp = "^[A-Z]{3}-[0-9]{6}$", 
+             message = "SKU must follow the pattern: 3 uppercase letters, hyphen, 6 digits (e.g., ABC-123456)")
+    @Column(unique = true, nullable = false)
     private String sku;
     
-    @Email(message = "Contact email must be valid")
-    @Column(length = 100)
+    @Email(message = "Contact email must be a valid email address")
     private String contactEmail;
     
-    // Default constructor (required by JPA)
-    public Product() {}
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
     
-    // Constructor for creating new products (without ID)
-    public Product(String name, BigDecimal price) {
-        this.name = name;
-        this.price = price;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
     
-    // Full constructor for testing
-    public Product(Long id, String name, BigDecimal price, String description, 
-                   Integer quantity, String sku, String contactEmail) {
-        this.id = id;
-        this.name = name;
-        this.price = price;
-        this.description = description;
-        this.quantity = quantity;
-        this.sku = sku;
-        this.contactEmail = contactEmail;
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
     
-    // Getters and setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
-    
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    
-    public Integer getQuantity() { return quantity; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
-    
-    public String getSku() { return sku; }
-    public void setSku(String sku) { this.sku = sku; }
-    
-    public String getContactEmail() { return contactEmail; }
-    public void setContactEmail(String contactEmail) { this.contactEmail = contactEmail; }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Product product = (Product) o;
-        return Objects.equals(id, product.id) && 
-               Objects.equals(name, product.name) && 
-               Objects.equals(price, product.price);
+    // Business methods for stock management
+    public boolean hasStock(int requestedQuantity) {
+        return this.quantity >= requestedQuantity;
     }
     
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, name, price);
+    public void decrementStock(int amount) {
+        if (!hasStock(amount)) {
+            throw new IllegalArgumentException(
+                String.format("Cannot decrement stock by %d. Only %d available", amount, this.quantity)
+            );
+        }
+        this.quantity -= amount;
     }
     
-    @Override
-    public String toString() {
-        return "Product{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", price=" + price +
-                ", description='" + description + '\'' +
-                ", quantity=" + quantity +
-                ", sku='" + sku + '\'' +
-                ", contactEmail='" + contactEmail + '\'' +
-                '}';
+    public void incrementStock(int amount) {
+        this.quantity += amount;
     }
 }
 ```
@@ -2319,37 +2324,30 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
 public record ProductRequest(
-    @NotBlank(message = "Product name cannot be blank")
-    @Size(min = 2, max = 100, message = "Product name must be between 2 and 100 characters")
+    @NotBlank(message = "Product name is required")
+    @Size(min = 3, max = 100, message = "Product name must be between 3 and 100 characters")
     String name,
     
-    @NotNull(message = "Price cannot be null")
-    @DecimalMin(value = "0.01", message = "Price must be at least $0.01")
-    @DecimalMax(value = "99999.99", message = "Price cannot exceed $99,999.99")
-    @Digits(integer = 5, fraction = 2, message = "Price must be a valid monetary amount")
+    @DecimalMin(value = "0.01", message = "Price must be greater than 0")
+    @DecimalMax(value = "999999.99", message = "Price must be less than 1,000,000")
+    @NotNull(message = "Price is required")
     BigDecimal price,
     
     @Size(max = 500, message = "Description cannot exceed 500 characters")
     String description,
     
     @Min(value = 0, message = "Quantity cannot be negative")
-    @Max(value = 10000, message = "Quantity cannot exceed 10,000")
+    @NotNull(message = "Quantity is required")
     Integer quantity,
     
-    @Pattern(regexp = "^[A-Z]{2,3}-\\d{3,6}$", 
-             message = "SKU must follow format: XX-123456 (2-3 letters, dash, 3-6 digits)")
+    @NotBlank(message = "SKU is required")
+    @Pattern(regexp = "^[A-Z]{3}-[0-9]{6}$", 
+             message = "SKU must follow the pattern: 3 uppercase letters, hyphen, 6 digits (e.g., ABC-123456)")
     String sku,
     
-    @Email(message = "Contact email must be valid")
+    @Email(message = "Contact email must be a valid email address")
     String contactEmail
-) {
-    // Custom constructor with defaults
-    public ProductRequest {
-        if (quantity == null) {
-            quantity = 0;
-        }
-    }
-}
+) {}
 ```
 
 Create `src/main/java/com/kousenit/shopping/dto/ProductResponse.java`:
@@ -2746,7 +2744,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -2771,7 +2769,7 @@ class ProductRestControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
     
-    @MockBean
+    @MockitoBean
     private ProductService productService;
     
     private Product sampleProduct;
@@ -3780,7 +3778,7 @@ import com.kousenit.shopping.services.ProductService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -3802,7 +3800,7 @@ class GlobalExceptionHandlerTest {
     @Autowired
     private ObjectMapper objectMapper;
     
-    @MockBean
+    @MockitoBean
     private ProductService productService;
     
     @Test
@@ -4195,12 +4193,47 @@ curl "http://localhost:8080/api/v1/products/price-range?minPrice=100"
 curl "http://localhost:8080/api/v1/non-existent"
 ```
 
-### Step 7.7: Update application.yml for ProblemDetail
+### Step 7.7: Complete application.yml Configuration
 
-Add ProblemDetail configuration to `application.yml`:
+Update `src/main/resources/application.yml` with the final production-ready configuration:
 
 ```yaml
 spring:
+  application:
+    name: shopping
+  
+  datasource:
+    url: jdbc:h2:mem:shopping
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 20000
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false
+  
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        generate_statistics: false
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+        
   mvc:
     problemdetails:
       enabled: true
@@ -4210,10 +4243,60 @@ spring:
       enabled: true
 
 server:
+  port: 8080
   error:
     include-stacktrace: never
     include-exception: false
     include-message: always
+    include-binding-errors: always
+    whitelabel:
+      enabled: false
+
+logging:
+  level:
+    root: INFO
+    com.kousenit.shopping: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+    org.springframework.data: DEBUG
+    
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      show-details: always
+
+---
+# Test profile configuration
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:testdb
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+  
+logging:
+  level:
+    root: WARN
+    com.kousenit.shopping: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql: WARN
+    org.springframework.data: WARN
 ```
 
 **Key Learning Points:**

@@ -15,12 +15,13 @@ Comprehensive hands-on exercises for learning Spring Boot fundamentals, from bas
 Foundation labs covering Spring Boot fundamentals from web development to database persistence.
 
 ### 🚀 **advanced-labs.md** - Enterprise Development Labs  
-Advanced labs building a complete shopping application with enterprise patterns:
-- Entity design with JPA validation
-- Spring Data repositories and service layers
-- REST API development with full CRUD operations
-- Global exception handling with @RestControllerAdvice
-- Transaction management and testing strategies
+Advanced labs building a complete shopping application with enterprise patterns. **Updated to match the final implementation exactly** - students can copy from the solution when needed:
+- Progressive entity design with JPA validation and Lombok
+- Spring Data repositories with custom queries and indexes
+- REST API development with modern DTOs and full CRUD operations
+- Global exception handling with RFC 7807 ProblemDetail
+- Transaction management and comprehensive testing strategies
+- YAML configuration with profile separation using `---`
 
 ## Project Structure
 
@@ -55,17 +56,20 @@ This repository contains three independent Spring Boot projects that demonstrate
   - Spring Data JPA repositories
   - H2 in-memory database
 
-### 📁 **shopping** - Enterprise Shopping Application
+### 📁 **shopping** - Enterprise Shopping Application (NEW)
 - **Package**: `com.kousenit.shopping`
 - **Purpose**: Complete enterprise application demonstrating advanced patterns
 - **Features**:
-  - JPA entities with comprehensive validation
-  - Spring Data JPA with custom queries
-  - Service layer with transaction management
-  - REST API with full CRUD operations
-  - Global exception handling with @RestControllerAdvice
-  - ProblemDetail (RFC 7807) error responses
-  - Sample data initialization with CommandLineRunner
+  - JPA entities with comprehensive validation and Lombok
+  - Database indexes for performance optimization
+  - Spring Data JPA with custom queries and sophisticated repository patterns
+  - Service layer with transaction management and business logic
+  - REST API with modern DTOs and full CRUD operations
+  - Global exception handling with RFC 7807 ProblemDetail responses
+  - YAML configuration with test profile isolation
+  - Sample data initialization with profile-aware CommandLineRunner
+  - Comprehensive test suite with modern @MockitoBean annotations
+  - Production-ready logging and monitoring endpoints
 
 ## Quick Start
 
@@ -112,12 +116,14 @@ cd shopping && ./gradlew test
 
 ### Modern Spring Boot Features
 - **Spring Boot 3.5.3** with Java 17+ features
-- **Records** for immutable data classes
+- **Records** for immutable data classes and DTOs
 - **Text blocks** for readable SQL and JSON
 - **RestClient** as the modern replacement for RestTemplate
 - **JdbcClient** as the modern alternative to JdbcTemplate
-- **Configuration with @Value** for externalized properties
-- **Spring Profiles** for environment-specific configuration
+- **@MockitoBean** replacing deprecated @MockBean
+- **Lombok** for reducing boilerplate with proper IDE integration
+- **YAML configuration** with `---` profile separation
+- **RFC 7807 ProblemDetail** for standardized error responses
 
 ### Web Development
 - RESTful web services with `@RestController`
@@ -139,11 +145,13 @@ cd shopping && ./gradlew test
 - **Feature Toggles**: Profile-based conditional bean creation
 
 ### Testing
-- **Unit Testing**: JUnit 5 with comprehensive assertions
-- **Integration Testing**: `@SpringBootTest` with profile activation
-- **Web Layer Testing**: MockMVC for REST API testing
+- **Unit Testing**: JUnit 5 with comprehensive assertions and modern patterns
+- **Integration Testing**: `@SpringBootTest` with profile activation and test isolation
+- **Web Layer Testing**: `@WebMvcTest` with MockMVC for REST API testing
+- **Service Layer Testing**: `@MockitoBean` for dependency mocking
+- **Entity Validation Testing**: Bean validation with constraint violation testing
 - **Reactive Testing**: `StepVerifier` for WebClient flows
-- **Database Testing**: Testcontainers for realistic database scenarios
+- **Database Testing**: Repository testing with `@DataJpaTest`
 - **Profile Testing**: `@ActiveProfiles` for environment-specific tests
 
 ## API Integrations
@@ -169,7 +177,7 @@ cd shopping && ./gradlew test
 
 **Development Profile (default):**
 - **H2 Console**: http://localhost:8080/h2-console
-- **JDBC URL**: `jdbc:h2:mem:devdb`
+- **JDBC URL**: `jdbc:h2:mem:shopping` (or project-specific name)
 - **Username**: `sa`
 - **Password**: (empty)
 
@@ -179,7 +187,15 @@ cd shopping && ./gradlew test
 ./gradlew bootRun --args='--spring.profiles.active=dev'    # H2 (default)
 ./gradlew bootRun --args='--spring.profiles.active=test'   # H2 optimized for testing
 ./gradlew bootRun --args='--spring.profiles.active=prod'   # PostgreSQL via Testcontainers
+
+# Shopping application with debug logging
+cd shopping && ./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
+
+**Shopping Application Endpoints:**
+- **H2 Console**: http://localhost:8080/h2-console
+- **Health Check**: http://localhost:8080/actuator/health
+- **API Documentation**: http://localhost:8080/api/v1/products
 
 ### Optional Requirements
 

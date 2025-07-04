@@ -11,7 +11,10 @@
       "Bash(git add:*)",
       "Bash(./gradlew test:*)",
       "WebFetch(domain:github.com)",
-      "mcp__docker-mcp__get_file_contents"
+      "mcp__docker-mcp__get_file_contents",
+      "Bash(git branch:*)",
+      "mcp__docker-mcp__search_files",
+      "mcp__docker-mcp__list_directory"
     ],
     "deny": []
   }

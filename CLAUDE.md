@@ -18,9 +18,33 @@ spring-and-spring-boot/
 ├── persistence/       # Database access patterns
 ├── shopping/          # Enterprise shopping application (from advanced labs)
 ├── labs.md            # Comprehensive basic lab instructions
-├── advanced-labs.md   # Enterprise development labs (shopping app)
+├── advanced-labs.md   # Enterprise development labs (UPDATED to match solution)
 └── README.md          # Project overview and quick start
 ```
+
+## Lab Instructions Philosophy
+
+The lab instructions follow a **progressive implementation strategy**:
+- **Basic Labs (labs.md)**: Foundation concepts
+- **Advanced Labs (advanced-labs.md)**: Updated to match final implementation exactly
+- **Copy-Paste Ready**: Students can reference solution code when needed
+- **Step-by-Step Learning**: Progressive complexity building to enterprise patterns
+
+## Key Decisions Made
+
+### Modern Spring Boot Patterns
+- **@MockitoBean**: Updated from deprecated @MockBean across all tests
+- **Lombok Integration**: Consistent use with IDE plugin requirements documented
+- **YAML Configuration**: Single file with `---` profile separation
+- **RFC 7807 ProblemDetail**: Standardized error responses
+- **Profile-based Test Isolation**: Separate test database configuration
+
+### Shopping Application Architecture
+- **Progressive Entity Design**: Start simple, add validation in Lab 4
+- **Database Indexes**: Performance optimization for SKU and name fields
+- **Custom Repository Queries**: Sophisticated Spring Data JPA patterns
+- **DTO Pattern**: Records for immutable request/response objects
+- **Production-Ready Configuration**: Comprehensive application.yml with logging and monitoring
 
 ## Common Commands
 
