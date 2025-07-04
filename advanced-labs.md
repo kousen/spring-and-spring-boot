@@ -8,6 +8,16 @@
 - **IDE** with Spring Boot support (IntelliJ IDEA, VS Code, or Eclipse)
 - **Basic Spring Boot knowledge** (complete basic labs first)
 
+## Table of Contents
+
+1. [Lab 1: Create the Product Entity (POJO)](#lab-1-create-the-product-entity-pojo)
+2. [Lab 2: Create the Repository Layer](#lab-2-create-the-repository-layer)
+3. [Lab 3: Database Initialization with CommandLineRunner](#lab-3-database-initialization-with-commandlinerunner)
+4. [Lab 4: Add Bean Validation Annotations](#lab-4-add-bean-validation-annotations)
+5. [Lab 5: Add Service Layer with @Transactional](#lab-5-add-service-layer-with-transactional)
+6. [Lab 6: Create REST Controller with Full CRUD Operations](#lab-6-create-rest-controller-with-full-crud-operations)
+7. [Lab 7: Add Global Exception Handling with @RestControllerAdvice](#lab-7-add-global-exception-handling-with-restcontrolleradvice)
+
 ## Overview
 
 These advanced labs build upon the basic Spring Boot concepts and demonstrate enterprise-level patterns and best practices. You'll create a complete shopping application with proper layering, validation, transaction management, and exception handling.
@@ -278,6 +288,8 @@ cd shopping
 - **BigDecimal for Money**: Avoid floating-point precision issues
 - **Proper equals/hashCode**: Essential for collections and JPA
 
+[Back to Table of Contents](#table-of-contents)
+
 ## Lab 2: Create the Repository Layer
 
 **Objective**: Implement the data access layer using Spring Data JPA.
@@ -481,6 +493,8 @@ class ProductRepositoryTest {
 - **TestEntityManager**: Provides test-specific persistence operations
 - **Custom Queries**: JPQL vs Native SQL approaches
 - **Repository Testing Patterns**: Setup, execution, and assertion patterns
+
+[Back to Table of Contents](#table-of-contents)
 
 ## Lab 3: Database Initialization with CommandLineRunner
 
@@ -788,6 +802,8 @@ spring:
 - **Test Profiles**: Prevent side effects during testing
 - **YAML Profiles**: Use `---` separator for profile-specific configuration
 - **Integration Testing**: Test actual application behavior with real dependencies
+
+[Back to Table of Contents](#table-of-contents)
 
 ## Lab 4: Add Bean Validation Annotations
 
@@ -1321,6 +1337,8 @@ VALUES ('Test Product', 99.99, 'A test product', 5, 'TST-123456', 'test@example.
 - **Custom Validation Messages**: User-friendly error messages
 - **Parameterized Tests**: Testing multiple invalid inputs efficiently
 - **Database Constraints**: How validation translates to database constraints
+
+[Back to Table of Contents](#table-of-contents)
 
 ## Lab 5: Add Service Layer with @Transactional
 
@@ -2298,6 +2316,8 @@ class ProductServiceIntegrationTest {
 - **Dependency Injection**: Constructor-based injection of repositories
 - **Logging**: Structured logging for monitoring and debugging
 - **Validation**: Business rule validation separate from bean validation
+
+[Back to Table of Contents](#table-of-contents)
 
 ## Lab 6: Create REST Controller with Full CRUD Operations
 
@@ -3326,6 +3346,8 @@ curl -X POST "http://localhost:8080/api/v1/products/1/reserve-stock" \
 - **MockMVC Testing**: Testing controllers without starting the full server
 - **Integration Testing**: End-to-end API testing with real database operations
 
+[Back to Table of Contents](#table-of-contents)
+
 ## Lab 7: Add Global Exception Handling with @RestControllerAdvice
 
 **Objective**: Implement centralized exception handling using @RestControllerAdvice with modern ProblemDetail responses for consistent error handling across the API.
@@ -4300,3 +4322,5 @@ logging:
 - **Security Considerations**: Not exposing sensitive internal details
 - **Error Testing**: Comprehensive testing of error scenarios
 - **Client-Friendly Errors**: Meaningful error messages for API consumers
+
+[Back to Table of Contents](#table-of-contents)
