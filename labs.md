@@ -22,6 +22,7 @@ This document contains hands-on exercises for learning Spring Boot fundamentals,
 7. [Using the JDBC Client (Spring Boot 3.2+)](#using-the-jdbc-client-spring-boot-32)
 8. [Using JPA entities and Spring Data JPA](#using-jpa-entities-and-spring-data-jpa)
 9. [Spring Profiles for Environment-Specific Configuration](#spring-profiles-for-environment-specific-configuration)
+10. [Optional: Aspect-Oriented Programming (AOP) with Spring](#optional-aspect-oriented-programming-aop-with-spring)
 
 ## Creating a New Project
 
@@ -2481,5 +2482,292 @@ This exercise demonstrates several important concepts:
 
 > [!WARNING]
 > The Testcontainers examples require Docker Desktop to be installed and running. If Docker is not available, those tests will be skipped automatically using JUnit's `assumeTrue()`.
+
+[Back to Table of Contents](#table-of-contents)
+
+## Optional: Aspect-Oriented Programming (AOP) with Spring
+
+**Objective**: Learn how to use Spring AOP to implement cross-cutting concerns like logging, performance monitoring, and method timing in a clean, modular way.
+
+> [!NOTE]
+> This is an optional exercise that builds upon the `demo` project. AOP (Aspect-Oriented Programming) is a programming paradigm that allows you to modularize cross-cutting concerns that span multiple classes and methods.
+
+### What is AOP?
+
+Aspect-Oriented Programming allows you to separate cross-cutting concerns (like logging, security, transactions) from your business logic. Instead of scattering logging code throughout your application, you can define it once in an aspect and apply it wherever needed.
+
+**Key AOP Concepts:**
+- **Aspect**: A module that encapsulates cross-cutting concerns
+- **Join Point**: A point in program execution (like method calls)
+- **Pointcut**: An expression that selects join points
+- **Advice**: Code that runs at selected join points (@Before, @After, @Around, etc.)
+
+### Step 1: Add AOP Dependency
+
+First, add the AOP starter to your `demo` project's `build.gradle`:
+
+```gradle
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'  // Add this line
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+```
+
+### Step 2: Create a Basic Logging Aspect
+
+Create a new package `aspects` in your demo project and add a `LoggingAspect` class:
+
+```java
+package com.kousenit.demo.aspects;
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+
+@Component
+@Aspect
+public class LoggingAspect {
+    private final Logger logger = LoggerFactory.getLogger(LoggingAspect.class);
+
+    @Before("execution(* com.kousenit.demo.controllers.*.*(..))")
+    public void logMethodCalls(JoinPoint joinPoint) {
+        logger.info("Entering method: {}", joinPoint.getSignature());
+        logger.info("with args: {}", Arrays.toString(joinPoint.getArgs()));
+    }
+}
+```
+
+**What this does:**
+- `@Aspect`: Marks this class as an aspect
+- `@Component`: Makes it a Spring-managed bean
+- `@Before`: Advice that runs before method execution
+- `execution(* com.kousenit.demo.controllers.*.*(..))`: Pointcut targeting all controller methods
+
+### Step 3: Test the Basic Logging
+
+1. Run your demo application:
+   ```bash
+   cd demo
+   ./gradlew bootRun
+   ```
+
+2. Visit `http://localhost:8080/hello?name=AOP` in your browser
+
+3. Check the console output - you should see logging from the aspect:
+   ```
+   INFO  c.k.demo.aspects.LoggingAspect - Entering method: String com.kousenit.demo.controllers.HelloController.sayHello(String,Model)
+   INFO  c.k.demo.aspects.LoggingAspect - with args: [AOP, {...}]
+   ```
+
+### Step 4: Add Performance Monitoring with @Around
+
+Add a performance monitoring method to your `LoggingAspect`:
+
+```java
+@Around("execution(* com.kousenit.demo.controllers.*.*(..))")
+public Object measureExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+    long startTime = System.nanoTime();
+    
+    try {
+        // Proceed with the original method call
+        Object result = joinPoint.proceed();
+        
+        long endTime = System.nanoTime();
+        logger.info("Method {} executed in {} ms", 
+                   joinPoint.getSignature().getName(), 
+                   (endTime - startTime) / 1_000_000);
+        
+        return result;
+    } catch (Exception e) {
+        long endTime = System.nanoTime();
+        logger.error("Method {} failed after {} ms with exception: {}", 
+                    joinPoint.getSignature().getName(), 
+                    (endTime - startTime) / 1_000_000, 
+                    e.getMessage());
+        throw e;
+    }
+}
+```
+
+**Important**: Comment out or remove the `@Before` advice to avoid duplicate logging, or use different pointcuts for each advice type.
+
+### Step 5: Create a Custom Annotation for Selective Timing
+
+Create a custom annotation for methods you want to time:
+
+```java
+package com.kousenit.demo.aspects;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Timed {
+    String description() default "";
+}
+```
+
+Add a corresponding aspect method:
+
+```java
+@Around("@annotation(timed)")
+public Object timeAnnotatedMethods(ProceedingJoinPoint joinPoint, Timed timed) throws Throwable {
+    long startTime = System.nanoTime();
+    
+    try {
+        Object result = joinPoint.proceed();
+        long duration = (System.nanoTime() - startTime) / 1_000_000;
+        
+        String description = timed.description().isEmpty() ? 
+            joinPoint.getSignature().getName() : timed.description();
+        logger.info("@Timed method '{}' executed in {} ms", description, duration);
+        
+        return result;
+    } catch (Exception e) {
+        long duration = (System.nanoTime() - startTime) / 1_000_000;
+        logger.error("@Timed method '{}' failed after {} ms", 
+                    joinPoint.getSignature().getName(), duration);
+        throw e;
+    }
+}
+```
+
+### Step 6: Use the @Timed Annotation
+
+Annotate a controller method with your custom annotation:
+
+```java
+@GetMapping("/hello")
+@Timed(description = "Hello page rendering")
+public String sayHello(@RequestParam(required = false, defaultValue = "World") String name, 
+                      Model model) {
+    model.addAttribute("user", name);
+    
+    // Simulate some processing time
+    try {
+        Thread.sleep(100);
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    }
+    
+    return "hello";
+}
+```
+
+### Step 7: Add Method-Level Logging with @AfterReturning
+
+Add specific logging for return values:
+
+```java
+@AfterReturning(pointcut = "execution(* com.kousenit.demo.controllers.*.*(..))", 
+                returning = "result")
+public void logMethodReturn(JoinPoint joinPoint, Object result) {
+    logger.info("Method {} returned: {}", 
+               joinPoint.getSignature().getName(), result);
+}
+```
+
+### Step 8: Test Your AOP Implementation
+
+1. Run the application and test different endpoints
+2. Observe the console output to see:
+   - Method entry logging
+   - Execution time measurements
+   - Return value logging
+   - Custom @Timed annotation in action
+
+### Step 9: Write Tests for Your Aspects
+
+Create a test to verify your aspects work correctly:
+
+```java
+package com.kousenit.demo.aspects;
+
+import com.kousenit.demo.controllers.HelloController;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.ui.Model;
+import org.springframework.ui.ConcurrentModel;
+
+import static org.mockito.Mockito.*;
+
+@SpringBootTest
+class LoggingAspectTest {
+
+    @Autowired
+    private HelloController helloController;
+
+    @SpyBean
+    private LoggingAspect loggingAspect;
+
+    @Test
+    void testAspectIsApplied() {
+        // Given
+        Model model = new ConcurrentModel();
+        
+        // When
+        helloController.sayHello("TestUser", model);
+        
+        // Then - verify the aspect was called
+        // Note: This is tricky to test directly, but we can verify the aspect bean exists
+        // In a real application, you might use a test appender to capture log output
+        verify(loggingAspect, atLeastOnce()).timeAnnotatedMethods(any(), any());
+    }
+}
+```
+
+### Understanding AOP Terminology
+
+**Pointcut Expressions:**
+- `execution(* com.example.*.*(..))` - All methods in com.example package
+- `execution(public * *(..))` - All public methods
+- `@annotation(Timed)` - Methods annotated with @Timed
+- `within(com.example.service.*)` - All methods within service package
+
+**Advice Types:**
+- `@Before` - Runs before method execution
+- `@After` - Runs after method execution (finally block)
+- `@AfterReturning` - Runs after successful method execution
+- `@AfterThrowing` - Runs after method throws exception
+- `@Around` - Wraps method execution (most powerful)
+
+### Key Learning Points
+
+- **Cross-Cutting Concerns**: AOP helps separate concerns like logging, security, and monitoring from business logic
+- **Declarative Programming**: Use annotations to apply aspects without modifying existing code
+- **Pointcut Expressions**: Powerful pattern matching for selecting where aspects apply
+- **Around Advice**: Most flexible advice type that can control method execution
+- **Custom Annotations**: Create domain-specific annotations for targeted aspect application
+- **Performance Monitoring**: AOP is excellent for adding timing and performance metrics
+- **Clean Separation**: Business logic remains focused on business concerns
+
+### Real-World AOP Use Cases
+
+- **Logging and Auditing**: Track method calls, parameters, and return values
+- **Performance Monitoring**: Measure execution times and identify bottlenecks
+- **Security**: Check permissions before method execution
+- **Transaction Management**: Spring's @Transactional uses AOP
+- **Caching**: Cache method results transparently
+- **Error Handling**: Centralized exception handling and logging
+- **Retry Logic**: Automatically retry failed operations
+
+> [!TIP]
+> AOP is powerful but should be used judiciously. Overuse can make code harder to debug and understand. Use it for truly cross-cutting concerns that would otherwise result in code duplication.
+
+> [!WARNING]
+> Be careful with pointcut expressions - overly broad expressions can impact performance by intercepting more methods than intended.
 
 [Back to Table of Contents](#table-of-contents)
