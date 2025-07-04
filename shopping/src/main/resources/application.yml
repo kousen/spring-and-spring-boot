@@ -1,9 +1,9 @@
 spring:
   application:
-    name: shopping-api
+    name: shopping
   
   datasource:
-    url: jdbc:h2:mem:testdb
+    url: jdbc:h2:mem:shopping
     driver-class-name: org.h2.Driver
     username: sa
     password: 
