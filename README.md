@@ -55,6 +55,18 @@ This repository contains three independent Spring Boot projects that demonstrate
   - Spring Data JPA repositories
   - H2 in-memory database
 
+### 📁 **shopping** - Enterprise Shopping Application
+- **Package**: `com.kousenit.shopping`
+- **Purpose**: Complete enterprise application demonstrating advanced patterns
+- **Features**:
+  - JPA entities with comprehensive validation
+  - Spring Data JPA with custom queries
+  - Service layer with transaction management
+  - REST API with full CRUD operations
+  - Global exception handling with @RestControllerAdvice
+  - ProblemDetail (RFC 7807) error responses
+  - Sample data initialization with CommandLineRunner
+
 ## Quick Start
 
 ### Build All Projects
@@ -66,6 +78,7 @@ This repository contains three independent Spring Boot projects that demonstrate
 cd demo && ./gradlew build
 cd restclient && ./gradlew build
 cd persistence && ./gradlew build
+cd shopping && ./gradlew build
 ```
 
 ### Run Applications
@@ -78,6 +91,9 @@ cd restclient && ./gradlew bootRun
 
 # Persistence examples with H2 console
 cd persistence && ./gradlew bootRun
+
+# Shopping application (port 8080)
+cd shopping && ./gradlew bootRun
 ```
 
 ### Run Tests
@@ -89,6 +105,7 @@ cd persistence && ./gradlew bootRun
 cd demo && ./gradlew test
 cd restclient && ./gradlew test
 cd persistence && ./gradlew test
+cd shopping && ./gradlew test
 ```
 
 ## Key Learning Topics

@@ -16,6 +16,7 @@ spring-and-spring-boot/
 ├── demo/              # Basic Spring Boot web application
 ├── restclient/        # External API integration examples
 ├── persistence/       # Database access patterns
+├── shopping/          # Enterprise shopping application (from advanced labs)
 ├── labs.md            # Comprehensive basic lab instructions
 ├── advanced-labs.md   # Enterprise development labs (shopping app)
 └── README.md          # Project overview and quick start
@@ -33,6 +34,7 @@ spring-and-spring-boot/
 cd demo && ./gradlew build
 cd restclient && ./gradlew build  
 cd persistence && ./gradlew build
+cd shopping && ./gradlew build
 
 # Clean and rebuild
 ./gradlew clean build
@@ -51,6 +53,7 @@ cd persistence && ./gradlew build
 cd demo && ./gradlew test
 cd restclient && ./gradlew test
 cd persistence && ./gradlew test
+cd shopping && ./gradlew test
 
 # Run tests with detailed output
 ./gradlew test --info
@@ -73,6 +76,9 @@ cd restclient && ./gradlew bootRun
 
 # Run persistence application with H2 console
 cd persistence && ./gradlew bootRun
+
+# Run shopping application (enterprise example)
+cd shopping && ./gradlew bootRun
 
 # Run with specific profile
 ./gradlew bootRun --args='--spring.profiles.active=dev'
@@ -219,6 +225,62 @@ kill -9 $(lsof -ti:8080)
 ```
 
 ## API Testing
+
+### Shopping API Endpoints (When running shopping application)
+
+```bash
+# Get all products (paginated)
+curl http://localhost:8080/api/v1/products
+
+# Get product by ID
+curl http://localhost:8080/api/v1/products/1
+
+# Search products by name
+curl "http://localhost:8080/api/v1/products/search?name=iPhone"
+
+# Get products in price range
+curl "http://localhost:8080/api/v1/products/price-range?minPrice=100&maxPrice=500"
+
+# Get low stock products
+curl "http://localhost:8080/api/v1/products/low-stock?threshold=10"
+
+# Create a new product
+curl -X POST http://localhost:8080/api/v1/products \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "New Product",
+       "price": 99.99,
+       "description": "A new product",
+       "quantity": 10,
+       "sku": "NEW-123456",
+       "contactEmail": "contact@example.com"
+     }'
+
+# Update product
+curl -X PUT http://localhost:8080/api/v1/products/1 \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "Updated Product",
+       "price": 149.99,
+       "description": "Updated description",
+       "quantity": 20,
+       "sku": "UPD-123456",
+       "contactEmail": "updated@example.com"
+     }'
+
+# Update stock
+curl -X PUT http://localhost:8080/api/v1/products/1/stock \
+     -H "Content-Type: application/json" \
+     -d '{"quantity": 50}'
+
+# Reserve stock
+curl -X POST http://localhost:8080/api/v1/products/1/reserve-stock \
+     -H "Content-Type: application/json" \
+     -d '{"quantity": 5}'
+
+# Delete product
+curl -X DELETE http://localhost:8080/api/v1/products/1
+```
 
 ### JSON Placeholder API (No Auth Required)
 
