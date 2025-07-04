@@ -39,6 +39,12 @@ The lab instructions follow a **progressive implementation strategy**:
 - **RFC 7807 ProblemDetail**: Standardized error responses
 - **Profile-based Test Isolation**: Separate test database configuration
 
+### Test Isolation Strategy (@DirtiesContext)
+- **Integration Test Design**: Uses `@DirtiesContext` for complete Spring context refresh
+- **Database Constraint Testing**: Enables testing real constraint violations (duplicate SKU → HTTP 409)
+- **Alternative Rejected**: `@Transactional` + `@Rollback(false)` causes Hibernate session conflicts
+- **Educational Value**: Shows proper enterprise test isolation patterns
+
 ### Shopping Application Architecture
 - **Progressive Entity Design**: Start simple, add validation in Lab 4
 - **Database Indexes**: Performance optimization for SKU and name fields
@@ -156,20 +162,64 @@ void shouldReturnGreeting() {
 }
 ```
 
-### Integration Testing
+### Integration Testing with Database Constraints
 
 ```java
+/**
+ * Integration tests with proper test isolation strategy.
+ * 
+ * Testing Strategy:
+ * - Uses @DirtiesContext to refresh the Spring context after each test method
+ * - This ensures complete test isolation when testing database constraints
+ * - @BeforeEach clears the database before each test for clean state
+ * - Allows real database commits to test constraint violations (e.g., duplicate SKU)
+ * 
+ * Alternative approaches considered:
+ * - @Transactional + @Rollback(false): Caused Hibernate session conflicts
+ * - Manual cleanup only: Less robust isolation between tests
+ */
 @SpringBootTest
-@TestPropertySource(locations = "classpath:application-test.properties")
-class ApplicationIntegrationTest {
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+class ShoppingApplicationIntegrationTest {
     
     @Autowired
-    private TestRestTemplate restTemplate;
+    private MockMvc mockMvc;
+    
+    @Autowired
+    private ProductRepository productRepository;
+    
+    @BeforeEach
+    void setUp() {
+        // Clear the database before each test
+        productRepository.deleteAll();
+    }
     
     @Test
-    void shouldReturnOkStatus() {
-        ResponseEntity<String> response = restTemplate.getForEntity("/health", String.class);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+    @DisplayName("Should handle duplicate SKU scenarios")
+    void testDuplicateSkuIntegration() throws Exception {
+        // Create first product
+        Product existingProduct = new Product();
+        existingProduct.setSku("DUP-123456");
+        productRepository.save(existingProduct);
+        
+        // Try to create second product with same SKU
+        ProductRequest duplicateRequest = new ProductRequest(
+            "Duplicate Product", 
+            new BigDecimal("149.99"), 
+            "Another product", 
+            5, 
+            "DUP-123456", // Same SKU
+            "duplicate@example.com"
+        );
+        
+        mockMvc.perform(post("/api/v1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(duplicateRequest)))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.status").value(409))
+            .andExpect(jsonPath("$.title").value("Duplicate SKU"));
     }
 }
 ```

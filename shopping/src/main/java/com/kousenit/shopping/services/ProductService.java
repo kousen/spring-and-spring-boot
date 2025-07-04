@@ -72,18 +72,9 @@ public class ProductService {
         product.setSku(request.sku());
         product.setContactEmail(request.contactEmail());
         
-        try {
-            Product savedProduct = productRepository.save(product);
-            log.info("Product created successfully with id: {}", savedProduct.getId());
-            return ProductResponse.from(savedProduct);
-        } catch (DataIntegrityViolationException e) {
-            log.error("Failed to create product due to data integrity violation", e);
-            if (e.getMessage().contains("sku")) {
-                throw new ProductValidationException("sku", request.sku(), 
-                    "Product with SKU " + request.sku() + " already exists");
-            }
-            throw e;
-        }
+        Product savedProduct = productRepository.save(product);
+        log.info("Product created successfully with id: {}", savedProduct.getId());
+        return ProductResponse.from(savedProduct);
     }
     
     @Transactional

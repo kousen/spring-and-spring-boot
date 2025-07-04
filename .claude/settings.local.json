@@ -14,7 +14,9 @@
       "mcp__docker-mcp__get_file_contents",
       "Bash(git branch:*)",
       "mcp__docker-mcp__search_files",
-      "mcp__docker-mcp__list_directory"
+      "mcp__docker-mcp__list_directory",
+      "mcp__docker-mcp__resolve-library-id",
+      "mcp__docker-mcp__get-library-docs"
     ],
     "deny": []
   }

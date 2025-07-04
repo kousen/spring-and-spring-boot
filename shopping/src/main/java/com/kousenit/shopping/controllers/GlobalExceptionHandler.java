@@ -227,10 +227,18 @@ public class GlobalExceptionHandler {
         logger.error("Data integrity violation: {}", ex.getMessage());
         
         String message = "Data integrity violation. This operation conflicts with existing data constraints.";
+        String type = "https://api.shopping.com/problems/data-integrity";
+        String title = "Data Integrity Violation";
         
         if (ex.getMessage() != null) {
             if (ex.getMessage().contains("Unique index or primary key violation")) {
-                message = "A record with this information already exists.";
+                if (ex.getMessage().contains("IDX_PRODUCT_SKU") || ex.getMessage().contains("sku")) {
+                    message = "A product with this SKU already exists.";
+                    type = "https://api.shopping.com/problems/duplicate-sku";
+                    title = "Duplicate SKU";
+                } else {
+                    message = "A record with this information already exists.";
+                }
             } else if (ex.getMessage().contains("constraint")) {
                 message = "This operation violates a data constraint.";
             }
@@ -238,8 +246,8 @@ public class GlobalExceptionHandler {
         
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.CONFLICT, message);
-        problemDetail.setType(URI.create("https://api.shopping.com/problems/data-integrity"));
-        problemDetail.setTitle("Data Integrity Violation");
+        problemDetail.setType(URI.create(type));
+        problemDetail.setTitle(title);
         problemDetail.setInstance(URI.create(request.getRequestURI()));
         problemDetail.setProperty("timestamp", LocalDateTime.now());
         

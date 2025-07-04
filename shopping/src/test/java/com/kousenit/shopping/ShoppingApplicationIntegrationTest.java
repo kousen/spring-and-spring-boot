@@ -15,7 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.math.BigDecimal;
 
@@ -24,9 +24,23 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * Integration tests for the Shopping application.
+ * 
+ * Testing Strategy:
+ * - Uses @DirtiesContext to refresh the Spring context after each test method
+ * - This ensures complete test isolation when testing database constraints
+ * - @BeforeEach clears the database before each test for clean state
+ * - Allows real database commits to test constraint violations (e.g., duplicate SKU)
+ * 
+ * Alternative approaches considered:
+ * - @Transactional + @Rollback(false): Caused Hibernate session conflicts
+ * - Manual cleanup only: Less robust isolation between tests
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class ShoppingApplicationIntegrationTest {
     
     @Autowired
@@ -247,9 +261,12 @@ class ShoppingApplicationIntegrationTest {
         mockMvc.perform(post("/api/v1/products")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(duplicateRequest)))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/validation-error"))
-            .andExpect(jsonPath("$.title").value("Validation Error"));
+            .andExpect(status().isConflict())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/duplicate-sku"))
+            .andExpect(jsonPath("$.title").value("Duplicate SKU"))
+            .andExpect(jsonPath("$.status").value(409))
+            .andExpect(jsonPath("$.detail").value("A product with this SKU already exists."));
         
         // Verify only one product exists
         assertThat(productRepository.count()).isEqualTo(1);
