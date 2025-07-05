@@ -126,6 +126,9 @@ layout: section
 
 # What is Spring?
 
+<div class="grid grid-cols-2 gap-8">
+<div>
+
 <v-clicks>
 
 - **Application framework** for Java
@@ -134,6 +137,29 @@ layout: section
 - **Result**: Loosely coupled, testable code
 
 </v-clicks>
+
+</div>
+<div>
+
+```mermaid
+graph TB
+    A["Spring IoC<br/>Container"] --> B["Bean<br/>Creation"]
+    A --> C["Dependency<br/>Injection"]
+    A --> D["Lifecycle<br/>Management"]
+    
+    B --> E["Your Objects"]
+    C --> E
+    D --> E
+    
+    style A fill:#6db33f,stroke:#333,stroke-width:3px,color:#fff
+    style B fill:#e1f5fe,stroke:#333,stroke-width:3px,color:#000
+    style C fill:#e1f5fe,stroke:#333,stroke-width:3px,color:#000
+    style D fill:#e1f5fe,stroke:#333,stroke-width:3px,color:#000
+    style E fill:#f3e5f5,stroke:#333,stroke-width:3px,color:#000
+```
+
+</div>
+</div>
 
 ---
 
@@ -642,6 +668,9 @@ layout: section
 
 # What is AOP?
 
+<div class="grid grid-cols-2 gap-8">
+<div>
+
 <v-clicks>
 
 - **Cross-cutting concerns**: Logging, security, transactions
@@ -651,6 +680,28 @@ layout: section
 - **Advice**: Code that runs at join points
 
 </v-clicks>
+
+</div>
+<div>
+
+```mermaid
+graph LR
+    A["Business<br/>Logic"] --> B["Service<br/>Method"] --> F["Result"]
+    
+    C["Logging"] -.-> B
+    D["Security"] -.-> B
+    E["Transaction"] -.-> B
+    
+    style A fill:#e1f5fe,stroke:#333,stroke-width:3px,color:#000
+    style B fill:#f3e5f5,stroke:#333,stroke-width:3px,color:#000
+    style C fill:#fff3e0,stroke:#333,stroke-width:3px,color:#000
+    style D fill:#ffebee,stroke:#333,stroke-width:3px,color:#000
+    style E fill:#e8f5e8,stroke:#333,stroke-width:3px,color:#000
+    style F fill:#e1f5fe,stroke:#333,stroke-width:3px,color:#000
+```
+
+</div>
+</div>
 
 ---
 
@@ -840,7 +891,8 @@ public class AppProperties {
 
 # YAML Profile Example
 
-<v-clicks>
+<div class="grid grid-cols-2 gap-4">
+<div>
 
 ```yaml
 # application.yml - all profiles in one file
@@ -867,7 +919,33 @@ spring:
     show-sql: false
 ```
 
-</v-clicks>
+</div>
+<div>
+
+```mermaid
+graph TD
+    A["Application<br/>Start"] --> B{"Active<br/>Profile?"}
+    
+    B -->|dev| C["H2 In-Memory<br/>Database"]
+    B -->|test| D["H2 Test<br/>Database"]
+    B -->|prod| E["PostgreSQL<br/>Database"]
+    
+    C --> F["Show SQL:<br/>true"]
+    D --> G["Show SQL:<br/>true"]
+    E --> H["Show SQL:<br/>false"]
+    
+    style A fill:#e1f5fe,stroke:#333,stroke-width:3px,color:#000
+    style B fill:#f3e5f5,stroke:#333,stroke-width:3px,color:#000
+    style C fill:#e8f5e8,stroke:#333,stroke-width:3px,color:#000
+    style D fill:#fff3e0,stroke:#333,stroke-width:3px,color:#000
+    style E fill:#ffebee,stroke:#333,stroke-width:3px,color:#000
+    style F fill:#e8f5e8,stroke:#333,stroke-width:3px,color:#000
+    style G fill:#fff3e0,stroke:#333,stroke-width:3px,color:#000
+    style H fill:#ffebee,stroke:#333,stroke-width:3px,color:#000
+```
+
+</div>
+</div>
 
 ---
 
@@ -913,18 +991,43 @@ layout: section
 
 # Layered Architecture
 
-<v-clicks>
+<div class="grid grid-cols-2 gap-8">
+<div class="flex justify-center">
 
-- **Controller Layer** (`@RestController`)  
+```mermaid
+---
+config:
+  flowchart:
+    nodeSpacing: 30
+    rankSpacing: 40
+---
+graph TD
+    A["Controller<br/>@RestController"] --> B["Service<br/>@Service"]
+    B --> C["Repository<br/>@Repository"]
+    C --> D[("Database")]
+    
+    style A fill:#e1f5fe,stroke:#333,stroke-width:3px,color:#000
+    style B fill:#f3e5f5,stroke:#333,stroke-width:3px,color:#000
+    style C fill:#e8f5e8,stroke:#333,stroke-width:3px,color:#000
+    style D fill:#fff3e0,stroke:#333,stroke-width:3px,color:#000
+```
+
+</div>
+<div>
+
+- **Controller Layer**  
   HTTP endpoints, web requests
-- **Service Layer** (`@Service`)  
+
+- **Service Layer**  
   Business logic, transactions
-- **Repository/DAO Layer** (`@Repository`, `@Entity`)  
-  Data access, domain models, database interaction
+
+- **Repository/DAO Layer**  
+  Data access, domain models
 
 **Result**: Easier to maintain, test, and evolve
 
-</v-clicks>
+</div>
+</div>
 
 ---
 
@@ -1241,7 +1344,8 @@ layout: section
 
 # Virtual Threads (Java 21+)
 
-<v-clicks>
+<div class="grid grid-cols-2 gap-8 mb-8">
+<div>
 
 ## Enable with one property:
 ```yaml
@@ -1251,12 +1355,44 @@ spring:
       enabled: true
 ```
 
+</div>
+<div>
+
 ## Key benefits:
 - Lightweight threads (can have millions)
 - No code changes required!
 - Better resource utilization
 
-</v-clicks>
+</div>
+</div>
+
+```mermaid
+graph TD
+    A["Traditional Threads"] --> B["Limited by OS"]
+    A --> C["Heavy Memory<br/>Usage"]
+    A --> D["~1000s max"]
+    
+    E["Virtual Threads"] --> F["JVM Managed"]
+    E --> G["Lightweight"]
+    E --> H["Millions possible"]
+    
+    I["I/O Operation"] --> J{"Thread Type?"}
+    J -->|Traditional| K["Thread Blocks<br/>CPU Wasted"]
+    J -->|Virtual| L["Thread Yields CPU<br/>Efficient"]
+    
+    style A fill:#ffebee,stroke:#333,stroke-width:3px,color:#000
+    style B fill:#ffebee,stroke:#333,stroke-width:3px,color:#000
+    style C fill:#ffebee,stroke:#333,stroke-width:3px,color:#000
+    style D fill:#ffebee,stroke:#333,stroke-width:3px,color:#000
+    style E fill:#e8f5e8,stroke:#333,stroke-width:3px,color:#000
+    style F fill:#e8f5e8,stroke:#333,stroke-width:3px,color:#000
+    style G fill:#e8f5e8,stroke:#333,stroke-width:3px,color:#000
+    style H fill:#e8f5e8,stroke:#333,stroke-width:3px,color:#000
+    style I fill:#f3e5f5,stroke:#333,stroke-width:3px,color:#000
+    style J fill:#f3e5f5,stroke:#333,stroke-width:3px,color:#000
+    style K fill:#ffebee,stroke:#333,stroke-width:3px,color:#000
+    style L fill:#e1f5fe,stroke:#333,stroke-width:3px,color:#000
+```
 
 ---
 

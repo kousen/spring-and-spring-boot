@@ -600,6 +600,27 @@ echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
 echo "org.gradle.jvmargs=-Xmx2g -XX:MaxPermSize=512m" >> ~/.gradle/gradle.properties
 ```
 
+## Presentation Design Patterns
+
+### Mermaid Diagram Best Practices
+
+For optimal readability in both light and dark modes, use this pattern for all Mermaid diagrams:
+
+```mermaid
+graph TD
+    A["Node Text"] --> B["Another Node"]
+    
+    style A fill:#e1f5fe,stroke:#333,stroke-width:3px,color:#000
+    style B fill:#f3e5f5,stroke:#333,stroke-width:3px,color:#000
+```
+
+**Key elements for readability:**
+- **No `<b>` tags** - they don't render reliably in Mermaid
+- **Explicit black text color** (`color:#000`) for contrast in both themes
+- **Thick borders** (`stroke-width:3px`) for better definition
+- **Dark border color** (`stroke:#333`) works well with all backgrounds
+- **Exception**: White text (`color:#fff`) on very dark backgrounds like Spring green (`#6db33f`)
+
 ## Security Notes
 
 - Never commit API keys or secrets
