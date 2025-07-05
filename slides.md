@@ -36,9 +36,9 @@ Kousen IT, Inc.
 - http://www.kousenit.com
 - http://kousenit.org (blog)
 - Social Media:
-  - [@kenkousen](https://twitter.com/kenkousen) (twitter)
-  - [@kenkousen@foojay.social](https://foojay.social/@kenkousen) (mastodon)
-  - [@kousenit.com](https://bsky.app/profile/kousenit.com) (bluesky)
+  - [@kenkousen](https://twitter.com/kenkousen) (Twitter)
+  - [@kousenit.com](https://bsky.app/profile/kousenit.com) (Bluesky)
+  - [https://www.linkedin.com/in/kenkousen/](https://www.linkedin.com/in/kenkousen/) (LinkedIn)
 - *Tales from the jar side* (free newsletter)
   - https://kenkousen.substack.com
   - https://youtube.com/@talesfromthejarside
@@ -128,10 +128,10 @@ layout: section
 
 <v-clicks>
 
-- An **application framework** and **inversion of control (IoC)** container for the Java platform.
-- Its core feature is **Dependency Injection (DI)**, which allows for loosely coupled components.
-- You declare components (called "beans") and their dependencies; Spring wires them together at runtime.
-- This removes the need for components to create their own dependencies, leading to more modular and testable code.
+- **Application framework** for Java
+- **Inversion of Control (IoC)** container
+- **Core feature**: Dependency Injection (DI)
+- **Result**: Loosely coupled, testable code
 
 </v-clicks>
 
@@ -141,10 +141,10 @@ layout: section
 
 <v-clicks>
 
-- The heart of a Spring application is the `ApplicationContext`.
-- It's the container that holds all the beans you've defined.
-- It's responsible for instantiating, configuring, and assembling the beans.
-- You can think of it as a registry of all the objects that make up your application.
+- **Heart** of a Spring application
+- **Container** that holds all beans
+- **Manages** instantiation and configuration
+- **Registry** of application objects
 
 </v-clicks>
 
@@ -175,12 +175,11 @@ layout: section
 
 <v-clicks>
 
-- An **opinionated** view of the Spring platform that makes it easy to create stand-alone, production-grade applications.
-- It's not a replacement for Spring, but a tool to make working with it much faster and easier.
-- **Key Goals**:
-  - Radically faster and widely accessible getting-started experience.
-  - Be opinionated out of the box, but get out of the way as requirements start to diverge from the defaults.
-  - Provide a range of non-functional features common to large classes of projects (e.g., embedded servers, security, metrics, health checks).
+- **Opinionated** Spring platform
+- **Fast** application creation  
+- **Production-ready** out of the box
+- **Auto-configuration** and starters
+- **Embedded servers** included
 
 </v-clicks>
 
@@ -619,16 +618,56 @@ layout: section
 
 ---
 
+# AOP: Why Learn This?
+
+<v-clicks>
+
+- **This section is optional**  
+  But helps understand what Spring does under the hood
+
+- **Most developers don't write aspects**  
+  But it's not difficult when needed
+
+- **A good IDE is essential**  
+  Shows where and when aspects are applied
+
+## Common Spring-provided aspects:
+- `@Transactional` - Transaction management
+- `@Cacheable` - Method caching
+- `@Async` - Asynchronous execution
+
+</v-clicks>
+
+---
+
 # What is AOP?
 
 <v-clicks>
 
-- **Cross-cutting concerns**: Features that affect multiple parts of your application
-  - Logging, security, transactions, caching, metrics
-- **Aspects**: Modular units of cross-cutting functionality
-- **Join Points**: Points in program execution (method calls, field access)
-- **Pointcuts**: Expressions that select join points
-- **Advice**: Code that runs at selected join points
+- **Cross-cutting concerns**: Logging, security, transactions
+- **Aspects**: Modular units of functionality  
+- **Join Points**: Method execution points (Spring only)
+- **Pointcuts**: Select where to apply advice
+- **Advice**: Code that runs at join points
+
+</v-clicks>
+
+---
+
+# Spring AOP Details
+
+<v-clicks>
+
+## Important Limitations:
+- **Method boundaries only**  
+  Spring aspects work at method calls, not field access
+- **Spring-managed beans only**  
+  Must be `@Component`, `@Service`, etc.
+
+## Based on AspectJ:
+- Spring uses a **subset** of AspectJ functionality
+- **Full documentation**: https://eclipse.org/aspectj
+- Spring uses **proxy-based** AOP (not bytecode weaving)
 
 </v-clicks>
 
@@ -739,11 +778,10 @@ app:
 
 ---
 
-# Using Configuration Values
+# Configuration with @Value
 
 <v-clicks>
 
-## @Value Annotation
 ```java
 @Component
 public class MyService {
@@ -752,8 +790,21 @@ public class MyService {
     
     @Value("${app.features.max-connections:50}") // with default
     private int maxConnections;
+    
+    @Value("#{systemProperties['user.home']}") // SpEL example
+    private String userHome;
 }
 ```
+
+**Note**: Spring Expression Language (SpEL) with `#{}` allows complex expressions - details beyond this course
+
+</v-clicks>
+
+---
+
+# Type-Safe Configuration
+
+<v-clicks>
 
 ## @ConfigurationProperties
 ```java
@@ -766,6 +817,10 @@ public class AppProperties {
 }
 ```
 
+- **Type-safe** binding of properties
+- **Validation** support with `@Valid`
+- **IDE support** for auto-completion
+
 </v-clicks>
 
 ---
@@ -776,18 +831,36 @@ public class AppProperties {
 
 - **Purpose**: Different configurations for different environments
 - **Common profiles**: `dev`, `test`, `prod`
-- **Profile-specific files**: `application-{profile}.yml`
+- **Properties files**: Use `application-{profile}.properties`
+- **YAML files**: Use `---` separator in single file
+
+</v-clicks>
+
+---
+
+# YAML Profile Example
+
+<v-clicks>
 
 ```yaml
-# application-dev.yml
+# application.yml - all profiles in one file
 spring:
+  profiles:
+    active: dev  # default profile
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
   datasource:
     url: jdbc:h2:mem:devdb
   jpa:
     show-sql: true
-    
-# application-prod.yml  
+---
 spring:
+  config:
+    activate:
+      on-profile: prod
   datasource:
     url: jdbc:postgresql://prod-server/myapp
   jpa:
@@ -800,19 +873,26 @@ spring:
 
 # Activating Profiles
 
-<v-clicks>
-
 ## Multiple ways to activate:
 
+<v-clicks>
+
 1. **Command line**: `java -jar app.jar --spring.profiles.active=prod`
+
 2. **Environment variable**: `SPRING_PROFILES_ACTIVE=prod`
+
 3. **application.yml**: 
 ```yaml
 spring:
   profiles:
     active: dev
 ```
+
 4. **In tests**: `@ActiveProfiles("test")`
+
+</v-clicks>
+
+<v-clicks>
 
 ## Profile-specific beans:
 ```java
@@ -833,26 +913,27 @@ layout: section
 
 # Layered Architecture
 
-A well-structured application is typically divided into layers, each with a specific responsibility.
-
 <v-clicks>
 
-- **Controller Layer**: (`@RestController`) - Exposes HTTP endpoints, handles web requests, delegates to the service layer. Does not contain business logic.
-- **Service Layer**: (`@Service`) - Contains the core business logic. Orchestrates calls to repositories and other services. Manages transactions.
-- **Repository Layer**: (`@Repository`) - Responsible for data access. Interacts with the database.
-- **Entity/Domain Layer**: (POJOs / `@Entity`) - Represents the core data model of the application.
+- **Controller Layer** (`@RestController`)  
+  HTTP endpoints, web requests
+- **Service Layer** (`@Service`)  
+  Business logic, transactions
+- **Repository/DAO Layer** (`@Repository`, `@Entity`)  
+  Data access, domain models, database interaction
 
-This separation of concerns makes the application easier to maintain, test, and evolve.
+**Result**: Easier to maintain, test, and evolve
 
 </v-clicks>
 
 ---
 
-# Validation
+# Bean Validation Annotations
 
-Spring Boot provides excellent support for validation using the Bean Validation API (JSR 380).
+<v-clicks>
 
-1.  **Add Annotations**: Add validation annotations to your DTOs or Entities.
+Spring Boot supports Bean Validation API (JSR 380):
+
 ```java
 public record ProductRequest(
     @NotBlank(message = "Product name is required")
@@ -863,9 +944,19 @@ public record ProductRequest(
     BigDecimal price
 ) {}
 ```
+
+Add validation annotations to DTOs or Entities
+
+</v-clicks>
+
+---
+
+# Enabling Validation
+
 <v-clicks>
 
-2.  **Enable Validation**: Use the `@Valid` annotation in your controller.
+Use `@Valid` annotation in your controller:
+
 ```java
 @PostMapping
 public ResponseEntity<ProductResponse> createProduct(
@@ -873,10 +964,10 @@ public ResponseEntity<ProductResponse> createProduct(
     // ...
 }
 ```
-</v-clicks>
-<v-clicks>
 
-- If the validation fails, Spring will throw a `MethodArgumentNotValidException`, which we can handle globally.
+**What happens on failure:**
+- Spring throws `MethodArgumentNotValidException`
+- Can be handled globally with `@RestControllerAdvice`
 
 </v-clicks>
 
@@ -935,7 +1026,7 @@ layout: section
 
 ---
 
-# Spring Boot Test Slices
+# Spring Boot Slice Tests
 
 <v-clicks>
 
@@ -957,20 +1048,23 @@ Each slice loads only the relevant parts of the application, making tests faster
 <v-clicks>
 
 ```java
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
 class ProductServiceTest {
-    @Mock private ProductRepository repository;
-    @InjectMocks private ProductService service;
+    @MockitoBean
+    private ProductRepository repository;
+    
+    @Autowired
+    private ProductService service;
     
     @Test
     void shouldCalculateDiscount() {
-        // Fast, isolated unit tests
+        // Spring-managed unit tests
     }
 }
 ```
 
-- **Fast execution** (no Spring context)
-- **Isolated** from external dependencies
+- **Spring-aware** mocking with `@MockitoBean`
+- **Dependency injection** still works
 - **Mock external services** and repositories
 
 </v-clicks>
