@@ -53,3 +53,4 @@ out/
 
 # Application specific
 astronauts.json
+node_modules/
