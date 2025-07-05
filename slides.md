@@ -1134,7 +1134,7 @@ layout: section
 
 ---
 
-# What is Actuator?
+# What is the Spring Boot Actuator?
 
 <v-clicks>
 
@@ -1324,33 +1324,6 @@ public class UserService {
 - Zipkin, Jaeger
 - CloudWatch, Datadog
 - Many more...
-
-</v-clicks>
-
----
-
-# HTTP Interfaces Evolution
-
-<v-clicks>
-
-Spring 6.1+ brings even cleaner HTTP clients:
-
-```java
-// Just declare the interface
-@HttpExchange("https://api.github.com")
-public interface GitHubClient {
-    
-    @GetExchange("/users/{username}")
-    User getUser(@PathVariable String username);
-    
-    @PostExchange("/repos/{owner}/{repo}/issues")
-    Issue createIssue(@PathVariable String owner, 
-                     @PathVariable String repo,
-                     @RequestBody IssueRequest request);
-}
-
-// Spring creates the implementation!
-```
 
 </v-clicks>
 
