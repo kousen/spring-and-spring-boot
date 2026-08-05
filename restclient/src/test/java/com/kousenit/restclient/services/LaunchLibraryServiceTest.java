@@ -19,8 +19,9 @@ class LaunchLibraryServiceTest {
     void expeditions_have_crew_aboard_stations() {
         var expeditions = service.getExpeditions();
 
-        assertThat(expeditions).isNotEmpty();
-        assertThat(expeditions).allSatisfy(expedition -> {
+        assertThat(expeditions)
+                .isNotEmpty()
+                .allSatisfy(expedition -> {
             assertThat(expedition.spacestation()).isNotNull();
             assertThat(expedition.spacestation().name()).isNotBlank();
             assertThat(expedition.crew()).isNotEmpty();
@@ -40,8 +41,9 @@ class LaunchLibraryServiceTest {
     void astronaut_assignments_have_required_fields() {
         List<AstronautAssignment> assignments = service.getAstronautAssignments();
 
-        assertThat(assignments).isNotEmpty();
-        assertThat(assignments).allSatisfy(assignment -> {
+        assertThat(assignments)
+                .isNotEmpty()
+                .allSatisfy(assignment -> {
             assertThat(assignment.astronautName()).isNotBlank();
             assertThat(assignment.role()).isNotBlank();
             assertThat(assignment.agency()).isNotBlank();

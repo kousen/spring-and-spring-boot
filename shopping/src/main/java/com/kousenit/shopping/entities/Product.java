@@ -44,7 +44,7 @@ public class Product {
     private Integer quantity;
     
     @NotBlank(message = "SKU is required")
-    @Pattern(regexp = "^[A-Z]{3}-[0-9]{6}$", 
+    @Pattern(regexp = "^[A-Z]{3}-\\d{6}$", 
              message = "SKU must follow the pattern: 3 uppercase letters, hyphen, 6 digits (e.g., ABC-123456)")
     @Column(unique = true, nullable = false)
     private String sku;

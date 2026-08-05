@@ -62,7 +62,7 @@ class ShoppingApplicationIntegrationTest {
     @DisplayName("Should perform complete product lifecycle operations")
     void testCompleteProductLifecycle() throws Exception {
         // Verify database is empty (CommandLineRunner should not run in test profile)
-        assertThat(productRepository.count()).isEqualTo(0);
+        assertThat(productRepository.count()).isZero();
         
         // Step 1: Create a product
         ProductRequest createRequest = new ProductRequest(
@@ -176,7 +176,7 @@ class ShoppingApplicationIntegrationTest {
             .andExpect(jsonPath("$.type").value("https://api.shopping.com/problems/product-not-found"));
         
         // Verify database is empty again
-        assertThat(productRepository.count()).isEqualTo(0);
+        assertThat(productRepository.count()).isZero();
     }
     
     @Test
@@ -202,7 +202,7 @@ class ShoppingApplicationIntegrationTest {
             .andExpect(jsonPath("$.detail").value("Invalid request content."));
         
         // Verify no product was created
-        assertThat(productRepository.count()).isEqualTo(0);
+        assertThat(productRepository.count()).isZero();
     }
     
     @Test
@@ -276,6 +276,6 @@ class ShoppingApplicationIntegrationTest {
     @DisplayName("Should test CommandLineRunner does not execute in test profile")
     void testCommandLineRunnerDoesNotExecuteInTestProfile() {
         // Verify that no sample data was loaded (CommandLineRunner should be disabled in test profile)
-        assertThat(productRepository.count()).isEqualTo(0);
+        assertThat(productRepository.count()).isZero();
     }
 }

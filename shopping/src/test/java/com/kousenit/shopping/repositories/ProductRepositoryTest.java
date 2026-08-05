@@ -107,8 +107,9 @@ class ProductRepositoryTest {
     void testFindLowStockProducts() {
         List<Product> products = productRepository.findLowStockProducts(20);
         
-        assertThat(products).hasSize(2);
-        assertThat(products).isSortedAccordingTo(Comparator.comparing(Product::getQuantity));
+        assertThat(products)
+                .hasSize(2)
+                .isSortedAccordingTo(Comparator.comparing(Product::getQuantity));
     }
     
     @Test
@@ -116,9 +117,10 @@ class ProductRepositoryTest {
     void testFindExpensiveProducts() {
         List<Product> products = productRepository.findExpensiveProducts(new BigDecimal("500.00"));
         
-        assertThat(products).hasSize(2);
-        assertThat(products).isSortedAccordingTo((p1, p2) -> 
-            p2.getPrice().compareTo(p1.getPrice()));
+        assertThat(products)
+                .hasSize(2)
+                .isSortedAccordingTo((p1, p2) ->
+                        p2.getPrice().compareTo(p1.getPrice()));
     }
     
     @Test

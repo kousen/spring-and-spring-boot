@@ -26,7 +26,6 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -104,7 +103,7 @@ public class GlobalExceptionHandler {
                 .getFieldErrors()
                 .stream()
                 .map(this::mapFieldError)
-                .collect(Collectors.toList());
+                .toList();
 
         ex.getBindingResult().getGlobalErrors().forEach(error ->
                 validationErrors.add(ValidationError.of(
@@ -133,7 +132,7 @@ public class GlobalExceptionHandler {
         List<ValidationError> validationErrors = ex.getConstraintViolations()
                 .stream()
                 .map(this::mapConstraintViolation)
-                .collect(Collectors.toList());
+                .toList();
 
         ApiError apiError = ApiError.withValidationErrors(
                 HttpStatus.BAD_REQUEST,

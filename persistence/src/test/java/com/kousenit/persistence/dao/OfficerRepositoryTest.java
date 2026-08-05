@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,7 +50,7 @@ public class OfficerRepositoryTest {
     public void findAll() {
         List<String> dbNames = repository.findAll().stream()
                 .map(Officer::getLastName)
-                .collect(Collectors.toList());
+                .toList();
         assertThat(dbNames).contains("Kirk", "Picard", "Sisko", "Janeway", "Archer");
     }
 
