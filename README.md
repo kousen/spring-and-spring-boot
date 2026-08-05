@@ -4,10 +4,16 @@ Comprehensive hands-on exercises for learning Spring Boot fundamentals, from bas
 
 ## Prerequisites
 
-- **Java 17 or later** (Spring Boot 3.x requires Java 17+)
-- **Spring Boot 3.5.3** (current version)
-- **Gradle 9.2.0** (latest stable)
+- **Java 21** (standardized across all projects)
+- **Spring Boot 4.1.0** (current version, based on Spring Framework 7)
+- **Gradle 9.6.1** (provided by the wrapper)
 - IDE with Spring Boot support (IntelliJ IDEA, Spring Tool Suite, or VS Code)
+
+## Two-Day Course Agenda
+
+- **Day 1 — Web and REST fundamentals** (labs.md, Labs 1–6): creating a project, controllers and Thymeleaf, REST controllers with `RestTestClient`, consuming APIs with `RestClient`, HTTP Interfaces, configuration with `@Value`
+- **Day 2 — Data access and beyond** (labs.md, Labs 7–11): `JdbcTemplate`, `JdbcClient`, JPA and Spring Data JPA, profiles, AOP (optional), plus a taste of Spring AI (Lab 12) if time permits
+- **Optional self-study** (advanced-labs.md): the complete enterprise `shopping` application — validation, DTOs, RFC 7807 error handling, transactions, and comprehensive testing
 
 ## Lab Materials
 
@@ -25,7 +31,7 @@ Advanced labs building a complete shopping application with enterprise patterns.
 
 ## Project Structure
 
-This repository contains three independent Spring Boot projects that demonstrate different aspects of the framework:
+This repository contains five independent Spring Boot projects that demonstrate different aspects of the framework:
 
 ### 📁 **demo** - Basic Spring Boot Web Application
 - **Package**: `com.kousenit.demo`
@@ -44,6 +50,7 @@ This repository contains three independent Spring Boot projects that demonstrate
   - HTTP Interfaces for declarative clients
   - JSON Placeholder API integration (no API keys required)
   - Launch Library API for space data
+  - OpenAI text-to-speech: a POST with a binary (mp3) response, streamed to a file
   - Comprehensive error handling
 
 ### 📁 **persistence** - Database Access Patterns
@@ -56,7 +63,7 @@ This repository contains three independent Spring Boot projects that demonstrate
   - Spring Data JPA repositories
   - H2 in-memory database
 
-### 📁 **shopping** - Enterprise Shopping Application (NEW)
+### 📁 **shopping** - Enterprise Shopping Application
 - **Package**: `com.kousenit.shopping`
 - **Purpose**: Complete enterprise application demonstrating advanced patterns
 - **Features**:
@@ -71,6 +78,14 @@ This repository contains three independent Spring Boot projects that demonstrate
   - Comprehensive test suite with modern @MockitoBean annotations
   - Production-ready logging and monitoring endpoints
 
+### 📁 **springai** - Spring AI Demo
+- **Package**: `com.kousenit.springai`
+- **Purpose**: Calling large language models with Spring AI 2.0
+- **Features**:
+  - `ChatClient` fluent API with the OpenAI starter
+  - Structured output mapped onto Java records
+  - Tests that skip themselves when `OPENAI_API_KEY` is not set
+
 ## Quick Start
 
 ### Build All Projects
@@ -83,6 +98,7 @@ cd demo && ./gradlew build
 cd restclient && ./gradlew build
 cd persistence && ./gradlew build
 cd shopping && ./gradlew build
+cd springai && ./gradlew build
 ```
 
 ### Run Applications
@@ -115,10 +131,11 @@ cd shopping && ./gradlew test
 ## Key Learning Topics
 
 ### Modern Spring Boot Features
-- **Spring Boot 3.5.3** with Java 17+ features
+- **Spring Boot 4.1.0** with Java 21 features
 - **Records** for immutable data classes and DTOs
 - **Text blocks** for readable SQL and JSON
 - **RestClient** as the modern replacement for RestTemplate
+- **RestTestClient** (Spring Framework 7) for fluent integration testing
 - **JdbcClient** as the modern alternative to JdbcTemplate
 - **@MockitoBean** replacing deprecated @MockBean
 - **Lombok** for reducing boilerplate with proper IDE integration
@@ -164,6 +181,10 @@ cd shopping && ./gradlew test
 ### Launch Library API
 - **Space Expeditions**: Active expedition and astronaut assignment data
 - **Demonstrates**: RestClient usage, nested JSON mapping, stream processing
+
+### OpenAI (springai project; API key required)
+- **Chat and structured output**: `ChatClient` demos in the `springai` project
+- **Configuration**: Reads the `OPENAI_API_KEY` environment variable; builds cleanly without it
 
 ## Development Environment
 
@@ -215,7 +236,7 @@ cd shopping && ./gradlew bootRun --args='--spring.profiles.active=dev'
 
 This project follows modern Spring Boot best practices:
 - Package structure: `com.kousenit.*`
-- Java 17+ features throughout
+- Java 21 features throughout
 - Comprehensive test coverage
 - Modern dependency management
 - Clean separation of concerns

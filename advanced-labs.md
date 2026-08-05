@@ -3,10 +3,13 @@
 ## Prerequisites
 
 - **Java 21** (standardized across all projects)
-- **Spring Boot 3.5.3**
-- **Gradle 9.1.0**
+- **Spring Boot 4.1.0**
+- **Gradle 9.6.1**
 - **IDE** with Spring Boot support (IntelliJ IDEA, VS Code, or Eclipse)
 - **Basic Spring Boot knowledge** (complete basic labs first)
+
+> [!NOTE]
+> In the two-day course format these labs are an **optional self-study and reference track**. The class covers the basic labs (labs.md); work through this document afterward at your own pace, or use it as a worked example of enterprise Spring Boot patterns. The completed solution is in the `shopping` project.
 
 ## Table of Contents
 
@@ -94,7 +97,7 @@ shopping/
 
 ```gradle
 plugins {
-    id 'org.springframework.boot' version '3.5.3'
+    id 'org.springframework.boot' version '4.1.0'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'java'
 }
@@ -116,8 +119,9 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -125,6 +129,8 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -396,8 +402,8 @@ import com.kousenit.shopping.entities.Product;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
@@ -1786,10 +1792,6 @@ spring:
     problemdetails:
       enabled: true
 
-  web:
-    problemdetails:
-      enabled: true
-
 server:
   port: 8080
   error:
@@ -1870,7 +1872,7 @@ Create `src/test/java/com/kousenit/shopping/ShoppingApplicationIntegrationTest.j
 ```java
 package com.kousenit.shopping;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.kousenit.shopping.dto.ProductRequest;
 import com.kousenit.shopping.dto.ProductResponse;
 import com.kousenit.shopping.dto.StockUpdateRequest;
@@ -1879,7 +1881,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;

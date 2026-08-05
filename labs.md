@@ -5,11 +5,12 @@ This document contains hands-on exercises for learning Spring Boot fundamentals,
 ## Prerequisites
 
 - **Java 21** (standardized across all projects)
-- **Spring Boot 3.5.3** (current version)
+- **Spring Boot 4.1.0** (current version, based on Spring Framework 7)
+- **Gradle 9.6.1** (provided by the wrapper)
 - IDE with Spring Boot support (IntelliJ IDEA, Spring Tool Suite, or VS Code)
 
 > [!IMPORTANT]
-> These labs are designed for Spring Boot 3.5.3 with Java 21. All code examples use modern Java features including records, text blocks, pattern matching, and enhanced switch expressions.
+> These labs are designed for Spring Boot 4.1.0 with Java 21. All code examples use modern Java features including records, text blocks, pattern matching, and enhanced switch expressions.
 
 ## Table of Contents
 
@@ -24,16 +25,18 @@ This document contains hands-on exercises for learning Spring Boot fundamentals,
 9. [Using JPA entities and Spring Data JPA](#using-jpa-entities-and-spring-data-jpa)
 10. [Spring Profiles for Environment-Specific Configuration](#spring-profiles-for-environment-specific-configuration)
 11. [Optional: Aspect-Oriented Programming (AOP) with Spring](#optional-aspect-oriented-programming-aop-with-spring)
+12. [Optional: A Taste of Spring AI](#optional-a-taste-of-spring-ai)
 
 ## Creating a New Project
 
 1. Go to http://start.spring.io to access the Spring Initializr
-2. In the "Generate a" drop-down, switch from "Maven Project" to "Gradle Project"
-3. Specify the Group as `com.kousenit` and the Artifact as `demo`
-4. Add the _Spring Web_ and _Thymeleaf_ dependencies
-5. Click the "Generate Project" button to download a zip file containing the project files
-6. Unzip the downloaded "demo.zip" file into any directory you like (but remember where it is)
-7. Import the project into your IDE
+2. Under **Project**, select **Gradle - Groovy** (the default is Maven)
+3. Leave the default Spring Boot version (4.1.x) and select **Java 21** in the Project Metadata section
+4. Specify the Group as `com.kousenit` and the Artifact as `demo`
+5. Add the _Spring Web_ and _Thymeleaf_ dependencies
+6. Click the "Generate" button to download a zip file containing the project files
+7. Unzip the downloaded "demo.zip" file into any directory you like (but remember where it is)
+8. Import the project into your IDE
    - If you are using IntelliJ IDEA, import the project by selecting the "Import Project" link on the Welcome page and navigating to the `build.gradle` file inside the unzipped archive
    - If you are using Spring Tool Suite (or any other Eclipse-based tool) with Gradle support, you can import the project as an "Existing Gradle project" by navigating to the root of the project and accepting all the defaults.
    - If you don't have Gradle support in your Eclipse-based IDE, generate an Eclipse project using the included `gradlew` script.
@@ -55,15 +58,15 @@ plugins {
 
    - Now you should be able to import the project into Eclipse as an existing Eclipse project (File -> Import... -> General -> Existing Projects Into Workspace)
 
-8. As part of the import process, the IDE will download all the required dependencies
-9. Open the file `src/main/java/com/kousenit/demo/DemoApplication.java` and note that it contains a standard Java "main" method (with signature: `public static void main(String[] args)`)
-10. Start the application by running this method. There won't be any web components available yet, but you can see the start up of the application in the command window.
-11. Add a controller by creating a file called `com.kousenit.demo.controllers.HelloController` in the `src/main/java` directory
+9. As part of the import process, the IDE will download all the required dependencies
+10. Open the file `src/main/java/com/kousenit/demo/DemoApplication.java` and note that it contains a standard Java "main" method (with signature: `public static void main(String[] args)`)
+11. Start the application by running this method. There won't be any web components available yet, but you can see the start up of the application in the command window.
+12. Add a controller by creating a file called `com.kousenit.demo.controllers.HelloController` in the `src/main/java` directory
 
 > [!NOTE]
 > The goal is to have the `HelloController` class in the `com.kousenit.demo.controllers` package starting at the root directory `src/main/java`
 
-12. The code for the `HelloController` is:
+13. The code for the `HelloController` is:
 
 ```java
 package com.kousenit.demo.controllers;
@@ -86,8 +89,8 @@ public class HelloController {
 }
 ```
 
-13. Create a file called `welcome.html` in the `src/main/resources/templates` folder
-14. The code for the `welcome.html` file is:
+14. Create a file called `welcome.html` in the `src/main/resources/templates` folder
+15. The code for the `welcome.html` file is:
 
 ```html
 <!DOCTYPE HTML>
@@ -101,11 +104,11 @@ public class HelloController {
 </html>
 ```
 
-15. Start up the application and navigate to http://localhost:8080/hello. You should see the string "Hello, World!" in the browser
-16. Change the URL in the browser to http://localhost:8080/hello?name=Dolly. You should now see the string "Hello, Dolly!" in the browser
-17. Shut down the application (there's no graceful way to do that -- just hit the stop button in your IDE)
-18. Add a home page to the app by creating a file called `index.html` in the `src/main/resources/static` folder
-19. The code for the `index.html` file is:
+16. Start up the application and navigate to http://localhost:8080/hello. You should see the string "Hello, World!" in the browser
+17. Change the URL in the browser to http://localhost:8080/hello?name=Dolly. You should now see the string "Hello, Dolly!" in the browser
+18. Shut down the application (there's no graceful way to do that -- just hit the stop button in your IDE)
+19. Add a home page to the app by creating a file called `index.html` in the `src/main/resources/static` folder
+20. The code for the `index.html` file is:
 
 ```html
 <!DOCTYPE HTML>
@@ -124,23 +127,23 @@ public class HelloController {
 </html>
 ```
 
-20. From a command prompt in the root of the project, build the application:
+21. From a command prompt in the root of the project, build the application:
 
  > gradlew build
 
-21. Now you can start the application with a generated executable jar file:
+22. Now you can start the application with a generated executable jar file:
 
  > java -jar build/libs/demo-0.0.1-SNAPSHOT.jar
 
-22. Navigate to http://localhost:8080 and see the new home page. From there you can navigate to the greeting page, and manually try adding a `name` parameter to the URL there
-23. Again stop the application (use Ctrl-C in the command window)
-24. Start it one more time using a special gradle task:
+23. Navigate to http://localhost:8080 and see the new home page. From there you can navigate to the greeting page, and manually try adding a `name` parameter to the URL there
+24. Again stop the application (use Ctrl-C in the command window)
+25. Start it one more time using a special gradle task:
 
  > gradlew bootRun
 
-25. When again you're happy the app is running properly, shut it down
-26. Because the controller is a simple POJO, you can unit test it by simply instantiating the controller and calling its `sayHello` method directly. To do so, add a class called `HelloControllerUnitTest` to the `com.kousenit.demo.controllers` package in the _test_ folder, `src/test/java`
-27. The code for the test class is:
+26. When again you're happy the app is running properly, shut it down
+27. Because the controller is a simple POJO, you can unit test it by simply instantiating the controller and calling its `sayHello` method directly. To do so, add a class called `HelloControllerUnitTest` to the `com.kousenit.demo.controllers` package in the _test_ folder, `src/test/java`
+28. The code for the test class is:
 
 ```java
 package com.kousenit.demo.controllers;
@@ -167,16 +170,16 @@ public class HelloControllerUnitTest {
 }
 ```
 
-28. Run the test by executing this class as a JUnit test. It should pass. It's not terribly useful, however, since it isn't affected by the request mapping or the request parameter.
-29. To perform an integration test instead, use the `MockMVC` classes available in Spring. Create a new class called `HelloControllerMockMVCTest` in the `com.kousenit.demo.controllers` package in `src/test/java`
-30. The code for the integration test is:
+29. Run the test by executing this class as a JUnit test. It should pass. It's not terribly useful, however, since it isn't affected by the request mapping or the request parameter.
+30. To perform an integration test instead, use the `MockMVC` classes available in Spring. Create a new class called `HelloControllerMockMVCTest` in the `com.kousenit.demo.controllers` package in `src/test/java`
+31. The code for the integration test is:
 
 ```java
 package com.kousenit.demo.controllers;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -207,7 +210,7 @@ public class HelloControllerMockMVCTest {
 }
 ```
 
-31. The tests should pass successfully. One of the advantages of the `@WebMvcTest` annotation over the generic `@SpringBootTest` annotation is that it allows you to automatically inject an instance of `MockMvc`, as shown.
+32. The tests should pass successfully. One of the advantages of the `@WebMvcTest` annotation over the generic `@SpringBootTest` annotation is that it allows you to automatically inject an instance of `MockMvc`, as shown.
 
 ## Add a Rest Controller
 
@@ -304,33 +307,44 @@ public class HelloRestController {
 > Modern Java's `String.formatted()` is cleaner than `String.format()`. Both work, but `formatted()` reads better as a method chain.
 
 10. You can now run the application and check the behavior using either `curl` or a similar command-line tool, or simply accessing the URL in a browser, either with or without a name.
-11. To create a test for the REST controller, we will use the `TestRestTemplate` class, because we included the `web` dependency rather than `webflux` which we'll use in the next exercise. Add a class called `HelloRestControllerIntegrationTest` in the `src/test/java` tree in the same package as the REST controller class.
-12. This time, when adding the `@SpringBootTest` annotation, add the argument `webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT`. This will autoconfigure several properties of the test, including making a `TestRestTemplate` available to inject.
-13. Add two tests, one for greetings without a name and one for greetings with a name.
-14. The tests should look like:
+11. To create a test for the REST controller, we will use the `RestTestClient` class, introduced in Spring Framework 7. It provides a fluent API for testing HTTP endpoints, built on the same `RestClient` you will use in the next exercise to consume external services. Add a class called `HelloRestControllerIntegrationTest` in the `src/test/java` tree in the same package as the REST controller class.
+12. `RestTestClient` support comes from a dedicated Spring Boot module. Add it to the `dependencies` block of your `build.gradle` file:
+
+```groovy
+testImplementation 'org.springframework.boot:spring-boot-resttestclient'
+```
+
+13. This time, when adding the `@SpringBootTest` annotation, add the argument `webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT` so the test starts a real server on an unused port. Then add the `@AutoConfigureRestTestClient` annotation (from `org.springframework.boot.resttestclient.autoconfigure`), which makes a `RestTestClient` bound to that server available for injection.
+14. Add two tests, one for greetings without a name and one for greetings with a name.
+15. The tests should look like:
 
 ```java
 @Test
-public void greetWithName(@Autowired TestRestTemplate template) {
-    Greeting response = template.getForObject("/rest?name=Dolly", Greeting.class);
-    assertEquals("Hello, Dolly!", response.getMessage());
+public void greetWithoutName(@Autowired RestTestClient client) {
+    client.get().uri("/rest")
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody(Greeting.class)
+            .isEqualTo(new Greeting("Hello, World!"));
 }
 
 @Test
-public void greetWithoutName(@Autowired TestRestTemplate template) {
-    ResponseEntity<Greeting> entity = template.getForEntity("/rest", Greeting.class);
-    assertEquals(HttpStatus.OK, entity.getStatusCode());
-    assertEquals(MediaType.APPLICATION_JSON, entity.getHeaders().getContentType());
-    Greeting response = entity.getBody();
-    if (response != null) {
-        assertEquals("Hello, World!", response.getMessage());
-    }
+public void greetWithName(@Autowired RestTestClient client) {
+    Greeting response = client.get().uri("/rest?name=Dolly")
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Greeting.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertEquals("Hello, Dolly!", response.message());
 }
 ```
 
-15. One test uses the `getForEntity` method of the template, which returns a `ResponseEntity<Greeting>`. The response entity gives access to the headers, so the two provided asserts check the status code and the media type of the response. The actual response is inside the body. By calling `getBody`, the response is returned as a de-serialized `Greeting` instance, which allows you to check its message.
-16. The other test uses the `getForObject` method, which returns the de-serialized response directly. This is simpler, but does not allow access to the headers. You can use either approach in your code.
-17. The tests should now pass. This application only checks HTTP GET requests, because the application doesn't have any way to save `Greeting` instances. Once that is added, you could include analogous POST, PUT, and DELETE operations.
+16. The first test stays entirely inside the fluent API: `exchange()` executes the request, and the `expectStatus`, `expectHeader`, and `expectBody` methods assert on the response. Because `Greeting` is a record, `isEqualTo` can compare the de-serialized body against an expected instance directly.
+17. The second test uses `returnResult()` to extract the de-serialized body from the fluent chain, so you can make ordinary JUnit assertions about it. Use whichever style you prefer.
+18. The tests should now pass. This application only checks HTTP GET requests so far. The solution project also demonstrates a POST test — see `postGreeting` in `HelloRestControllerIntegrationTest`, which sends a `Greeting` with `body(...)` and expects HTTP 201 CREATED.
 
 ## Building a REST Client
 
@@ -610,6 +624,59 @@ class LaunchLibraryServiceTest {
 ```bash
 ./gradlew test --tests LaunchLibraryServiceTest
 ```
+
+### Bonus: A POST Request with a Binary Response (Text to Speech)
+
+*Optional — requires an OpenAI API key in the `OPENAI_API_KEY` environment variable.*
+
+So far every call has been a GET returning JSON. The `TextToSpeechService` in the solution project rounds out the picture with a `RestClient` POST that sends a JSON body, authenticates with a bearer token, and receives **binary** data — an mp3 of the spoken text:
+
+```java
+@Service
+public class TextToSpeechService {
+    private final RestClient client;
+
+    public TextToSpeechService(RestClient.Builder builder,
+                               @Value("${OPENAI_API_KEY:}") String apiKey) {
+        client = builder.baseUrl("https://api.openai.com")
+                .defaultHeader("Authorization", "Bearer " + apiKey)
+                .build();
+    }
+
+    public record TtsRequest(String model, String input, String voice) {
+    }
+
+    public Path speak(String text, Path outputFile) {
+        return client.post()
+                .uri("/v1/audio/speech")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new TtsRequest("gpt-4o-mini-tts", text, "alloy"))
+                .exchange((request, response) -> {
+                    if (!response.getStatusCode().is2xxSuccessful()) {
+                        throw new IllegalStateException(
+                                "TTS request failed with status " + response.getStatusCode());
+                    }
+                    try (var body = response.getBody()) {
+                        Files.copy(body, outputFile, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    return outputFile;
+                });
+    }
+}
+```
+
+Points to notice:
+
+- A Java record (`TtsRequest`) is serialized to the JSON request body — the same records idiom you used for responses, in the other direction.
+- The `exchange(...)` callback exposes the raw response body as an `InputStream`, so `Files.copy` streams the audio straight into a file. If you have used Java's own `HttpClient`, this is the `RestClient` analog of `HttpResponse.BodyHandlers.ofFile(path)` — the mp3 is never buffered in memory.
+- The service works well beyond English — the tests generate both Spanish (properly accented) and Hindi audio, the latter passing Devanagari script straight through:
+
+```java
+service.speak("नमस्ते! स्प्रिंग बूट कोर्स में आपका स्वागत है। खूब मज़ा कीजिए!",
+        Path.of("build", "swagat.mp3"));
+```
+
+  Run `TextToSpeechServiceTest` and play the mp3 files it writes to the `build` directory. (The tests skip themselves when no API key is set.)
 
 [Back to Table of Contents](#table-of-contents)
 
@@ -1645,7 +1712,7 @@ Spring Framework 6.1 (included in Spring Boot 3.2+) introduced `JdbcClient`, a m
    > ```
 
    > [!TIP]
-   > Notice how `JdbcClient` allows us to use text blocks (Java 17+ feature) for multi-line SQL, making the code more readable. The named parameters (`:paramName`) are much cleaner than positional parameters (`?`).
+   > Notice how `JdbcClient` allows us to use text blocks for multi-line SQL, making the code more readable. The named parameters (`:paramName`) are much cleaner than positional parameters (`?`).
 
 9. Add the necessary imports to your class:
 
@@ -1733,7 +1800,7 @@ The `JdbcClient` approach offers several benefits over `JdbcTemplate`:
 - **SimpleJdbcInsert Integration**: Clean insert operations with generated key handling
 - **Bean Property Mapping**: Automatic parameter extraction using reflection
 - **Consistent Design**: Follows the same patterns as other modern Spring clients
-- **Text Block Friendly**: Works seamlessly with Java 17+ text blocks for complex SQL
+- **Text Block Friendly**: Works seamlessly with text blocks for complex SQL
 
 > [!TIP]
 > While both `JdbcTemplate` and `JdbcClient` are fully supported, consider using `JdbcClient` for new projects to take advantage of its more modern and readable API.
@@ -1987,7 +2054,7 @@ First, add Testcontainers support to `build.gradle` for advanced database testin
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-rest'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.data:spring-data-rest-hal-explorer'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     
@@ -1997,9 +2064,10 @@ dependencies {
     
     // Testing dependencies (optional - requires Docker)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-    testImplementation 'org.testcontainers:junit-jupiter'
-    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+    testImplementation 'org.testcontainers:testcontainers-postgresql'
     testRuntimeOnly('org.junit.platform:junit-platform-launcher')
 }
 ```
@@ -2368,13 +2436,13 @@ Aspect-Oriented Programming allows you to separate cross-cutting concerns (like 
 
 ### Step 1: Add AOP Dependency
 
-First, add the AOP starter to your `demo` project's `build.gradle`:
+First, add the AspectJ starter to your `demo` project's `build.gradle`. (Spring Boot 4 renamed `spring-boot-starter-aop` to `spring-boot-starter-aspectj`.)
 
 ```gradle
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'org.springframework.boot:spring-boot-starter-aop'  // Add this line
+    implementation 'org.springframework.boot:spring-boot-starter-aspectj'  // Add this line
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -2562,7 +2630,7 @@ import com.kousenit.demo.controllers.HelloController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.ui.Model;
 import org.springframework.ui.ConcurrentModel;
 
@@ -2574,7 +2642,7 @@ class LoggingAspectTest {
     @Autowired
     private HelloController helloController;
 
-    @SpyBean
+    @MockitoSpyBean
     private LoggingAspect loggingAspect;
 
     @Test
@@ -2633,5 +2701,92 @@ class LoggingAspectTest {
 
 > [!WARNING]
 > Be careful with pointcut expressions - overly broad expressions can impact performance by intercepting more methods than intended.
+
+[Back to Table of Contents](#table-of-contents)
+## Optional: A Taste of Spring AI
+
+*If time permits.* This exercise uses the `springai` project, which demonstrates [Spring AI](https://spring.io/projects/spring-ai) — the Spring approach to calling large language models. Spring AI 2.0 is built for Spring Boot 4, and its central abstraction, `ChatClient`, follows the same fluent-builder style as `RestClient` and `JdbcClient`.
+
+### Prerequisites
+
+- An OpenAI API key in the `OPENAI_API_KEY` environment variable. Without a key the project still compiles and its tests skip themselves, so it is safe to build the whole repository either way.
+
+### Step 1: Examine the Build File
+
+Open `springai/build.gradle` and note two things:
+
+```groovy
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:2.0.0"
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    // ...
+}
+```
+
+The Spring AI BOM manages the versions of all Spring AI artifacts, and the OpenAI starter auto-configures everything needed to talk to the OpenAI API — including a `ChatClient.Builder` you can inject, exactly the way `RestClient.Builder` worked in the REST client labs.
+
+### Step 2: The ChatClient Service
+
+Open `springai/src/main/java/com/kousenit/springai/services/SpaceService.java`:
+
+```java
+@Service
+public class SpaceService {
+    private final ChatClient chatClient;
+
+    public SpaceService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+
+    // Simple text in, text out
+    public String askQuestion(String question) {
+        return chatClient.prompt()
+                .user(question)
+                .call()
+                .content();
+    }
+
+    // Structured output: the model's response is mapped onto a Java record
+    public SpaceStation describeStation(String stationName) {
+        return chatClient.prompt()
+                .user(u -> u.text("Describe the space station named {name}")
+                        .param("name", stationName))
+                .call()
+                .entity(SpaceStation.class);
+    }
+
+    public record SpaceStation(
+            String name,
+            String operator,
+            int yearLaunched,
+            List<String> participatingCountries) {
+    }
+}
+```
+
+Two ideas to notice:
+
+1. **`askQuestion`** is the simplest possible interaction: a user message in, the model's text out.
+2. **`describeStation`** shows *structured output* — Spring AI asks the model to reply as JSON matching the `SpaceStation` record and de-serializes it for you. This is the same records-as-data-carriers idiom you used for REST responses, applied to an LLM.
+
+### Step 3: Run the Tests
+
+```bash
+cd springai
+./gradlew test
+```
+
+Look at `SpaceServiceTest`: a `@BeforeEach` method calls `assumeTrue(...)` on the presence of the API key, so the tests run as live integration tests when the key is available and report as skipped when it is not — the same guard pattern the `JokeServiceTest` used for network availability.
+
+### Key Learning Points
+
+- Spring AI brings LLM access into the familiar Spring programming model: a starter, auto-configuration, and an injectable fluent builder
+- `ChatClient` structured output maps model responses onto Java records
+- `assumeTrue` keeps environment-dependent tests from failing builds where the environment is absent
 
 [Back to Table of Contents](#table-of-contents)

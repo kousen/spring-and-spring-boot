@@ -4,9 +4,9 @@ This file contains common commands and patterns for working with the Spring Boot
 
 ## Project Information
 
-- **Spring Boot Version**: 3.5.3
+- **Spring Boot Version**: 4.1.0 (Spring Framework 7)
 - **Java Version**: 21 (standardized across all projects)
-- **Gradle Version**: 9.2.0
+- **Gradle Version**: 9.6.1
 - **Package Structure**: `com.kousenit.*`
 
 ## Project Structure
@@ -17,6 +17,7 @@ spring-and-spring-boot/
 ├── restclient/        # External API integration examples
 ├── persistence/       # Database access patterns
 ├── shopping/          # Enterprise shopping application (from advanced labs)
+├── springai/          # Spring AI 2.0 demo (OpenAI ChatClient)
 ├── labs.md            # Comprehensive basic lab instructions
 ├── advanced-labs.md   # Enterprise development labs (UPDATED to match solution)
 └── README.md          # Project overview and quick start
@@ -69,6 +70,7 @@ cd demo && ./gradlew build
 cd restclient && ./gradlew build  
 cd persistence && ./gradlew build
 cd shopping && ./gradlew build
+cd springai && ./gradlew build
 
 # Clean and rebuild
 ./gradlew clean build
@@ -88,6 +90,7 @@ cd demo && ./gradlew test
 cd restclient && ./gradlew test
 cd persistence && ./gradlew test
 cd shopping && ./gradlew test
+cd springai && ./gradlew test   # live tests skip unless OPENAI_API_KEY is set
 
 # Run tests with detailed output
 ./gradlew test --info
@@ -443,7 +446,7 @@ curl "https://ll.thespacedevs.com/2.3.0/expedition/?is_active=true&limit=5"
 
 ## Modern Java Features Examples
 
-### Records (Java 17+)
+### Records
 
 ```java
 // DTO Pattern with Records
@@ -520,7 +523,7 @@ public class ProductNotFoundException extends RuntimeException {
 }
 ```
 
-### Text Blocks (Java 17+)
+### Text Blocks
 
 ```java
 String sql = """
@@ -565,7 +568,7 @@ When applications are running:
 
 1. Import as Gradle project
 2. Enable annotation processing
-3. Set Project SDK to Java 17+
+3. Set Project SDK to Java 21
 4. Enable Spring Boot features
 
 ### VS Code

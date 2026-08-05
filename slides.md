@@ -97,7 +97,7 @@ layout: two-cols
   - Layered architecture
   - Testing strategies
   - When to use what
-- **Modern Features** (3.x+)
+- **Modern Features** (Boot 4 and Spring AI)
 
 </v-clicks>
 
@@ -1361,20 +1361,38 @@ public class DatabaseHealthIndicator implements HealthIndicator {
 layout: section
 ---
 
-# Modern Spring Boot 3+ Features
+# Modern Spring Boot Features
 
 ---
 
-# Spring Boot 3.x Highlights
+# Spring Boot 4 Highlights
 
 <v-clicks>
 
-- **Java 21 Baseline**: Modern Java features (records, text blocks, pattern matching, virtual threads)
-- **Jakarta EE 9+**: Package namespace change from `javax.*` to `jakarta.*`
+- **Spring Framework 7** foundation with Jakarta EE 11
+- **Modular starters**: `spring-boot-starter-webmvc`, per-technology test starters
+- **Jackson 3**: new `tools.jackson` packages, `JsonMapper` as the entry point
+- **RestTestClient**: fluent integration testing built on `RestClient`
+- **Problem Details**: RFC 9457 responses (absent `type` means `about:blank`)
 - **Native Compilation**: GraalVM native image support
 - **Observability**: Micrometer observation API
-- **Problem Details**: RFC 7807 support built-in
-- **Improved Docker Support**: Paketo buildpacks, layered JARs
+
+</v-clicks>
+
+---
+
+# Boot 3 → Boot 4 Migration Notes
+
+<v-clicks>
+
+- `spring-boot-starter-web` → `spring-boot-starter-webmvc`
+- `spring-boot-starter-aop` → `spring-boot-starter-aspectj`
+- `WebClient` support moved to `spring-boot-starter-webclient`
+- Test infrastructure split into per-technology modules
+  - `@WebMvcTest`, `@AutoConfigureMockMvc` → `org.springframework.boot.webmvc.test.autoconfigure`
+  - `@DataJpaTest` → `org.springframework.boot.data.jpa.test.autoconfigure`
+- `@MockBean` removed — use `@MockitoBean` (available since Boot 3.4)
+- Testcontainers 2.x: artifacts renamed (`testcontainers-postgresql`)
 
 </v-clicks>
 
@@ -1500,6 +1518,68 @@ public class UserService {
 - Many more...
 
 </v-clicks>
+
+---
+
+# Spring AI
+
+<v-clicks>
+
+- Spring's programming model applied to large language models
+- Spring AI **2.0** is built for Spring Boot 4 and Framework 7
+- Starters per provider: OpenAI, Anthropic, Ollama, and many more
+- Auto-configuration gives you an injectable `ChatClient.Builder`
+- Familiar fluent style, like `RestClient` and `JdbcClient`
+
+</v-clicks>
+
+---
+
+# ChatClient in Action
+
+```java
+@Service
+public class SpaceService {
+    private final ChatClient chatClient;
+
+    public SpaceService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+
+    public String askQuestion(String question) {
+        return chatClient.prompt()
+                .user(question)
+                .call()
+                .content();
+    }
+}
+```
+
+- API key via the `OPENAI_API_KEY` environment variable
+- See the `springai` project and Lab 12
+
+---
+
+# Structured Output
+
+```java
+public record SpaceStation(
+        String name,
+        String operator,
+        int yearLaunched,
+        List<String> participatingCountries) {}
+
+public SpaceStation describeStation(String stationName) {
+    return chatClient.prompt()
+            .user(u -> u.text("Describe the space station named {name}")
+                    .param("name", stationName))
+            .call()
+            .entity(SpaceStation.class);
+}
+```
+
+- The model's JSON reply is mapped onto your record
+- Same records-as-data-carriers idiom used for REST responses
 
 ---
 

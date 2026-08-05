@@ -1,0 +1,56 @@
+name: Build & publish slides PDF
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'slides.md'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/build-slides-pdf.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: slides-pdf
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Export slides to PDF
+        run: npm run export
+
+      - name: Verify PDF was produced
+        # Fail loudly: action-gh-release only warns on a missing file, so without
+        # this a renamed/missing export would publish a release with no asset.
+        run: |
+          test -s spring-and-spring-boot-slides.pdf \
+            || { echo "::error::spring-and-spring-boot-slides.pdf is missing or empty — export failed or the output name changed"; exit 1; }
+
+      - name: Publish rolling "latest" release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: slides-latest
+          name: Latest slides PDF
+          body: |
+            Auto-built from `slides.md` at commit ${{ github.sha }}.
+
+            Download: [`spring-and-spring-boot-slides.pdf`](https://github.com/${{ github.repository }}/releases/latest/download/spring-and-spring-boot-slides.pdf)
+          files: spring-and-spring-boot-slides.pdf
+          make_latest: true

@@ -1,5 +1,17 @@
 {
+  "name": "spring-and-spring-boot-slides",
+  "private": true,
+  "scripts": {
+    "dev": "slidev slides.md --open",
+    "build": "slidev build slides.md",
+    "export": "slidev export slides.md --output spring-and-spring-boot-slides.pdf"
+  },
+  "overrides": {
+    "dompurify": "^3.4.12"
+  },
   "devDependencies": {
-    "playwright-chromium": "^1.53.2"
+    "@slidev/cli": "^52.18.0",
+    "@slidev/theme-seriph": "^0.25.0",
+    "playwright-chromium": "^1.62.0"
   }
 }
