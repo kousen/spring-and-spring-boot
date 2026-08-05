@@ -9,11 +9,21 @@ Comprehensive hands-on exercises for learning Spring Boot fundamentals, from bas
 - **Gradle 9.6.1** (provided by the wrapper)
 - IDE with Spring Boot support (IntelliJ IDEA, Spring Tool Suite, or VS Code)
 
+### Before the First Day (Student Checklist)
+
+1. **Install JDK 21** (any distribution — Temurin, Zulu, Oracle, SDKMAN all work)
+2. **Install an IDE** with Spring support (IntelliJ IDEA recommended; Community Edition is fine)
+3. **Optional — Docker Desktop**: needed only for the PostgreSQL/Testcontainers exercise; everything else uses in-memory H2
+4. **Optional — OpenAI API key**: needed for the text-to-speech bonus and the Spring AI lab. Create one at platform.openai.com *before class* (account setup and billing take a few minutes) and put it in an `OPENAI_API_KEY` environment variable. Everything builds and runs without it; the AI exercises simply skip
+5. **Network note**: several labs call public APIs (jsonplaceholder.typicode.com, api.chucknorris.io, ll.thespacedevs.com, api.openai.com). If you're on a corporate network, confirm those are reachable or expect some tests to skip/fail
+
 ## Two-Day Course Agenda
 
 - **Day 1 — Web and REST fundamentals** (labs.md, Labs 1–6): creating a project, controllers and Thymeleaf, REST controllers with `RestTestClient`, consuming APIs with `RestClient`, HTTP Interfaces, configuration with `@Value`
 - **Day 2 — Data access and beyond** (labs.md, Labs 7–11): `JdbcTemplate`, `JdbcClient`, JPA and Spring Data JPA, profiles, AOP (optional), plus a taste of Spring AI (Lab 12) if time permits
 - **Optional self-study** (advanced-labs.md): the complete enterprise `shopping` application — validation, DTOs, RFC 7807 error handling, transactions, and comprehensive testing
+
+> Bean Validation, global exception handling, and Spring Security are covered in the slides; hands-on practice for the first two lives in the advanced labs, and security is deliberately pointers-only — it deserves its own course.
 
 ## Lab Materials
 

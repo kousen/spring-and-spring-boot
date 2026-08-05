@@ -1198,9 +1198,47 @@ This exercise builds on the basic REST client by adding configuration management
    }
    ```
 
+### Step 6: Type-Safe Configuration with @ConfigurationProperties
+
+`@Value` works well for a handful of individual properties, but Spring Boot's preferred approach for a *group* of related properties is `@ConfigurationProperties`, which binds a whole prefix onto one object. The solution project already uses it — look at `MyProperties`:
+
+```java
+@ConfigurationProperties("my.service")
+public class MyProperties {
+    private String jokeUrl;
+
+    public String getJokeUrl() {
+        return jokeUrl;
+    }
+
+    public void setJokeUrl(String jokeUrl) {
+        this.jokeUrl = jokeUrl;
+    }
+}
+```
+
+with this line in `application.properties`:
+
+```properties
+my.service.joke-url=https://api.chucknorris.io
+```
+
+and this annotation on the application class to register it:
+
+```java
+@SpringBootApplication
+@EnableConfigurationProperties(MyProperties.class)
+public class RestclientApplication { ... }
+```
+
+Note the relaxed binding: the kebab-case property `joke-url` binds to the camel-case field `jokeUrl` automatically. `JokeService` then injects `MyProperties` like any other bean and calls `getJokeUrl()` — no `@Value` expressions, and the property names are checked in one place instead of being scattered through the code as strings.
+
+**When to use which:** `@Value` for one-off values; `@ConfigurationProperties` when several properties share a prefix, when you want IDE auto-completion for them (via the configuration metadata), or when they deserve validation annotations.
+
 ### Key Learning Points
 
 - **@Value Patterns**: Property injection with defaults
+- **@ConfigurationProperties**: Type-safe binding of a property prefix onto an object, with relaxed binding (kebab-case to camelCase)
 - **Constructor Injection**: Immutable configuration
 - **Timeout Configuration**: Connection and read timeouts
 - **Retry Logic**: Exponential backoff for resilience
@@ -2414,6 +2452,33 @@ This exercise demonstrates several important concepts:
 
 > [!WARNING]
 > The Testcontainers examples require Docker Desktop to be installed and running. If Docker is not available, those tests will be skipped automatically using JUnit's `assumeTrue()`.
+
+### Bonus: A Peek at Spring Boot Actuator
+
+The `persistence` project includes the Actuator starter:
+
+```groovy
+implementation 'org.springframework.boot:spring-boot-starter-actuator'
+```
+
+With the application running, visit the production-ready endpoints it adds:
+
+```bash
+curl http://localhost:8080/actuator          # what's exposed
+curl http://localhost:8080/actuator/health   # {"status":"UP"}
+```
+
+Only `health` is exposed over HTTP by default. To see more (metrics, env, loggers), add this to `application.yml` and restart:
+
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+```
+
+Then try `curl http://localhost:8080/actuator/metrics/jvm.memory.used`. Actuator is how production Spring Boot applications expose health checks and metrics to load balancers and monitoring systems — see the slides for custom health indicators and Micrometer integration.
 
 [Back to Table of Contents](#table-of-contents)
 

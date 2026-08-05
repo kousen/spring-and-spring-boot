@@ -37,13 +37,14 @@ public class JokeServiceTest {
     public void getJoke() {
         String joke = service.getJoke();
         logger.info(joke);
-        assertTrue(joke.contains("Chuck") || joke.contains("Norris"));
+        // Not every joke mentions Chuck Norris by name, so just check we got one
+        assertTrue(joke != null && !joke.isBlank());
     }
 
     @Test
     public void getJokeReactive() {
         String joke = service.getJokeReactive();
         logger.info(joke);
-        assertTrue(joke.contains("Chuck") || joke.contains("Norris"));
+        assertTrue(joke != null && !joke.isBlank());
     }
 }

@@ -1163,6 +1163,64 @@ public class GlobalExceptionHandler {
 layout: section
 ---
 
+# Spring Security: The Short Version
+
+<v-clicks>
+
+- Add one dependency and everything changes:
+
+```groovy
+implementation 'org.springframework.boot:spring-boot-starter-security'
+```
+
+- **Secure by default**: every endpoint now requires authentication (HTTP 401)
+- Auto-configured form login and HTTP Basic
+- One generated user (`user`) with a random password printed at startup
+- CSRF protection, security headers, and session management — all on by default
+- Not in the labs: real security setups are application-specific and deserve their own course
+
+</v-clicks>
+
+---
+
+# Customizing Security
+
+```java
+@Configuration
+public class SecurityConfig {
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/public/**").permitAll()
+                .anyRequest().authenticated())
+            .formLogin(Customizer.withDefaults())
+            .httpBasic(Customizer.withDefaults());
+        return http.build();
+    }
+}
+```
+
+- A `SecurityFilterChain` bean replaces the default rules
+- Method-level checks: `@PreAuthorize("hasRole('ADMIN')")`
+- Test support: `@WithMockUser` in `spring-security-test`
+
+---
+
+# Security: Where to Go Next
+
+<v-clicks>
+
+- **Spring Security docs**: [docs.spring.io/spring-security](https://docs.spring.io/spring-security/reference/)
+- **Username/password + database**: `UserDetailsService` and `PasswordEncoder` (BCrypt)
+- **Stateless APIs**: OAuth2 resource server with JWT validation
+- **Social/enterprise login**: OAuth2 client (Google, GitHub, Okta, ...)
+- **Testing**: `@WithMockUser`, `SecurityMockMvcRequestPostProcessors`
+- Start with form login on a small app before tackling OAuth2
+
+</v-clicks>
+
+---
+
 # Testing Strategies
 
 ---
