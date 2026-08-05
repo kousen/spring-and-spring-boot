@@ -28,10 +28,13 @@ subprojects {
         }
     }
 
-    // Include templates/config in analysis so Sonar can check them (e.g. Thymeleaf XSS)
+    // Include templates/config in analysis so Sonar can check them (e.g. Thymeleaf XSS).
+    // Exclude the H2 seed scripts: Sonar treats .sql as PL/SQL and warns about
+    // a missing Oracle data dictionary.
     sonar {
         properties {
             property 'sonar.sources', 'src/main/java,src/main/resources'
+            property 'sonar.exclusions', '**/*.sql'
         }
     }
 
