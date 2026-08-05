@@ -1,6 +1,6 @@
 package com.kousenit.shopping;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.kousenit.shopping.dto.ProductRequest;
 import com.kousenit.shopping.dto.ProductResponse;
 import com.kousenit.shopping.dto.StockUpdateRequest;
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -196,7 +196,7 @@ class ShoppingApplicationIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.type").value("about:blank"))
+            .andExpect(jsonPath("$.type").doesNotExist()) // RFC 9457: absent type means "about:blank"
             .andExpect(jsonPath("$.title").value("Bad Request"))
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.detail").value("Invalid request content."));

@@ -37,10 +37,6 @@ spring:
   mvc:
     problemdetails:
       enabled: true
-  
-  web:
-    problemdetails:
-      enabled: true
 
 server:
   port: 8080

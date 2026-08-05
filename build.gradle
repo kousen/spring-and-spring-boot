@@ -36,6 +36,6 @@ subprojects {
 }
 
 wrapper {
-    gradleVersion = '9.1.0'
+    gradleVersion = '9.6.1'
     distributionType = Wrapper.DistributionType.BIN
 }

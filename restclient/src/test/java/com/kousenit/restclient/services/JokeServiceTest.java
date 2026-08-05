@@ -41,8 +41,8 @@ public class JokeServiceTest {
     }
 
     @Test
-    public void getJokeRestTemplate() {
-        String joke = service.getJokeRT();
+    public void getJokeReactive() {
+        String joke = service.getJokeReactive();
         logger.info(joke);
         assertTrue(joke.contains("Chuck") || joke.contains("Norris"));
     }

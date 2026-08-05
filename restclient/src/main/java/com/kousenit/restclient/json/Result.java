@@ -1,10 +1,10 @@
 package com.kousenit.restclient.json;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
-// Necessary because setting SNAKE_CASE in application.properties doesn't work
-// as of Jackson 2.12.0
+// Explicit naming strategy on the class; the global
+// spring.jackson.property-naming-strategy setting does not apply here
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Result {
     private String formattedAddress;

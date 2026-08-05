@@ -55,3 +55,9 @@ out/
 astronauts.json
 node_modules/
 .claude/settings.local.json
+
+# Slidev
+spring-and-spring-boot-slides.pdf
+
+# Keep all Gradle wrapper jars (including subprojects) despite *.jar above
+!**/gradle/wrapper/gradle-wrapper.jar

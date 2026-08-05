@@ -1,6 +1,6 @@
 package com.kousenit.shopping.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.kousenit.shopping.dto.ProductRequest;
 import com.kousenit.shopping.dto.ProductResponse;
 import com.kousenit.shopping.dto.StockUpdateRequest;
@@ -10,7 +10,7 @@ import com.kousenit.shopping.services.ProductService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -199,7 +199,7 @@ class ProductRestControllerTest {
                 .content(objectMapper.writeValueAsString(invalidRequest)))
             .andExpect(status().isBadRequest())
             .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-            .andExpect(jsonPath("$.type").value("about:blank"))
+            .andExpect(jsonPath("$.type").doesNotExist()) // RFC 9457: absent type means "about:blank"
             .andExpect(jsonPath("$.title").value("Bad Request"))
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.detail").value("Invalid request content."));
@@ -340,7 +340,7 @@ class ProductRestControllerTest {
         mockMvc.perform(get("/api/v1/products/invalid-id"))
             .andExpect(status().isBadRequest())
             .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-            .andExpect(jsonPath("$.type").value("about:blank"))
+            .andExpect(jsonPath("$.type").doesNotExist()) // RFC 9457: absent type means "about:blank"
             .andExpect(jsonPath("$.title").value("Bad Request"))
             .andExpect(jsonPath("$.status").value(400));
     }
@@ -352,7 +352,7 @@ class ProductRestControllerTest {
         mockMvc.perform(get("/api/v1/products/price-range?minPrice=100"))
             .andExpect(status().isBadRequest())
             .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-            .andExpect(jsonPath("$.type").value("about:blank"))
+            .andExpect(jsonPath("$.type").doesNotExist()) // RFC 9457: absent type means "about:blank"
             .andExpect(jsonPath("$.title").value("Bad Request"))
             .andExpect(jsonPath("$.status").value(400));
     }
