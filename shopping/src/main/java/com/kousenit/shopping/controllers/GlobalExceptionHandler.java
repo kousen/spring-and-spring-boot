@@ -26,6 +26,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Stream;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -99,19 +100,17 @@ public class GlobalExceptionHandler {
 
         logger.warn("Validation failed for request: {}", ex.getMessage());
 
-        List<ValidationError> validationErrors = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(this::mapFieldError)
+        List<ValidationError> validationErrors = Stream.concat(
+                ex.getBindingResult().getFieldErrors().stream()
+                        .map(this::mapFieldError),
+                ex.getBindingResult().getGlobalErrors().stream()
+                        .map(error -> ValidationError.of(
+                                error.getObjectName(),
+                                null,
+                                error.getDefaultMessage(),
+                                error.getCode()
+                        )))
                 .toList();
-
-        ex.getBindingResult().getGlobalErrors().forEach(error ->
-                validationErrors.add(ValidationError.of(
-                        error.getObjectName(),
-                        null,
-                        error.getDefaultMessage(),
-                        error.getCode()
-                )));
 
         ApiError apiError = ApiError.withValidationErrors(
                 HttpStatus.BAD_REQUEST,
