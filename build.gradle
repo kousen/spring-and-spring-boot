@@ -8,6 +8,25 @@ sonar {
         property "sonar.projectKey", "kousen_spring-and-spring-boot"
         property "sonar.organization", "kousen-it-inc"
         property "sonar.host.url", "https://sonarcloud.io"
+
+        // Demo classes exercised only by OPENAI_API_KEY-gated tests: CI skips
+        // those tests, so exclude the classes from coverage measurement
+        property "sonar.coverage.exclusions", "**/com/kousenit/springai/**,**/TextToSpeechService.java"
+
+        // Rules silenced as inappropriate for teaching materials:
+        //   S8688 - "pass ZoneId/Clock to now()": LocalDateTime.now() is clearer in demos
+        //   S5786 - "remove public from JUnit 5 tests": course code keeps explicit visibility
+        //   S1192 - "extract duplicated string literals": constants hurt readability in seed data
+        //   S2699 - "test needs an assertion": some tests intentionally verify via console output
+        property "sonar.issue.ignore.multicriteria", "e1,e2,e3,e4"
+        property "sonar.issue.ignore.multicriteria.e1.ruleKey", "java:S8688"
+        property "sonar.issue.ignore.multicriteria.e1.resourceKey", "**/*.java"
+        property "sonar.issue.ignore.multicriteria.e2.ruleKey", "java:S5786"
+        property "sonar.issue.ignore.multicriteria.e2.resourceKey", "**/*.java"
+        property "sonar.issue.ignore.multicriteria.e3.ruleKey", "java:S1192"
+        property "sonar.issue.ignore.multicriteria.e3.resourceKey", "**/*.java"
+        property "sonar.issue.ignore.multicriteria.e4.ruleKey", "java:S2699"
+        property "sonar.issue.ignore.multicriteria.e4.resourceKey", "**/*.java"
     }
 }
 
@@ -36,20 +55,6 @@ subprojects {
         properties {
             property 'sonar.sources', 'src/main/java,src/main/resources'
             property 'sonar.exclusions', '**/*.sql'
-            // Rules silenced as inappropriate for teaching materials:
-            //   S8688 - "pass ZoneId/Clock to now()": LocalDateTime.now() is clearer in demos
-            //   S5786 - "remove public from JUnit 5 tests": course code keeps explicit visibility
-            //   S1192 - "extract duplicated string literals": constants hurt readability in seed data
-            //   S2699 - "test needs an assertion": some tests intentionally verify via console output
-            property 'sonar.issue.ignore.multicriteria', 'e1,e2,e3,e4'
-            property 'sonar.issue.ignore.multicriteria.e1.ruleKey', 'java:S8688'
-            property 'sonar.issue.ignore.multicriteria.e1.resourceKey', '**/*.java'
-            property 'sonar.issue.ignore.multicriteria.e2.ruleKey', 'java:S5786'
-            property 'sonar.issue.ignore.multicriteria.e2.resourceKey', '**/*.java'
-            property 'sonar.issue.ignore.multicriteria.e3.ruleKey', 'java:S1192'
-            property 'sonar.issue.ignore.multicriteria.e3.resourceKey', '**/*.java'
-            property 'sonar.issue.ignore.multicriteria.e4.ruleKey', 'java:S2699'
-            property 'sonar.issue.ignore.multicriteria.e4.resourceKey', '**/*.java'
         }
     }
 
