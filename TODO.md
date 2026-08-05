@@ -2,6 +2,12 @@
 
 This file tracks potential additions to the Spring Boot labs based on commonly used features in production applications.
 
+> **Status (August 2026):** Several items below are now at least partially covered:
+> - **Actuator** — dependency added to `persistence` and `shopping`, with a hands-on bonus step in Lab 10 (custom health indicators/metrics remain future work)
+> - **Spring Security** — three overview slides (secure-by-default, `SecurityFilterChain`, where to go next); still no lab, deliberately
+> - **Bean Validation** and **Global Exception Handling** — fully covered in the advanced labs (`shopping` project); slides cover both
+> - New since this list was written: **Spring AI** (Lab 12 + `springai` project) and **text-to-speech via RestClient** (Lab 3 bonus)
+
 ## High Priority Topics
 
 ### 1. Spring Security ⭐⭐⭐⭐⭐
