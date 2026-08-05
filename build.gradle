@@ -21,10 +21,17 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
-    
+
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    // Include templates/config in analysis so Sonar can check them (e.g. Thymeleaf XSS)
+    sonar {
+        properties {
+            property 'sonar.sources', 'src/main/java,src/main/resources'
         }
     }
 
