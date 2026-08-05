@@ -86,7 +86,7 @@ public class JpaOfficerDAOTest {
     @Test
     public void doesNotExist() {
         List<Integer> ids = getIds();
-        assertThat(ids).doesNotContain(999);
+        assertThat(ids).isNotEmpty().doesNotContain(999);
         assertFalse(dao.existsById(999));
     }
 
