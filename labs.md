@@ -680,6 +680,100 @@ service.speak("नमस्ते! स्प्रिंग बूट कोर�
 
 [Back to Table of Contents](#table-of-contents)
 
+### Bonus: One Key, Hundreds of Models (OpenRouter)
+
+*Optional — requires an OpenRouter API key in the `OPENROUTER_API_KEY` environment variable. Sign up at [openrouter.ai](https://openrouter.ai); the demo uses only free models, so no credits are needed.*
+
+[OpenRouter](https://openrouter.ai) is a gateway that fronts hundreds of AI models — from OpenAI, Google, Anthropic, Meta, DeepSeek, Qwen, and many others — behind a single API and a single key. It deliberately mirrors OpenAI's chat completions wire format, which makes it a perfect payoff for this lab: the `RestClient` + records approach you have been using all along retargets to a whole catalog of models by changing nothing but the base URL and a model string.
+
+First, records for the request and response. Note that the response records declare only the fields we actually use — Spring Boot configures Jackson to ignore unknown properties, so the rest of OpenRouter's payload (token usage, timestamps, and so on) is simply skipped:
+
+```java
+public class OpenRouterRecords {
+    // Request body for the chat completions endpoint (OpenAI-compatible format)
+    public record ChatRequest(
+            String model,
+            List<Message> messages
+    ) {}
+
+    public record Message(
+            String role,
+            String content
+    ) {}
+
+    // Response: only the fields we care about — Spring Boot's Jackson
+    // configuration ignores the rest of the payload (usage, timestamps, etc.)
+    public record ChatResponse(
+            String id,
+            String model,
+            List<Choice> choices
+    ) {}
+
+    public record Choice(
+            Message message
+    ) {}
+}
+```
+
+The service follows the same skeleton as `TextToSpeechService` — base URL plus bearer token — but this time the response is plain JSON, so the simple `retrieve().body(...)` form is all we need:
+
+```java
+@Service
+public class OpenRouterService {
+    private final Logger logger = LoggerFactory.getLogger(OpenRouterService.class);
+
+    private final RestClient client;
+    private final String defaultModel;
+
+    public OpenRouterService(RestClient.Builder builder,
+                             @Value("${OPENROUTER_API_KEY:}") String apiKey,
+                             @Value("${openrouter.model:openrouter/free}") String defaultModel) {
+        client = builder.baseUrl("https://openrouter.ai/api/v1")
+                .defaultHeader("Authorization", "Bearer " + apiKey)
+                .build();
+        this.defaultModel = defaultModel;
+    }
+
+    public String chat(String prompt) {
+        return chat(defaultModel, prompt);
+    }
+
+    public String chat(String model, String prompt) {
+        ChatResponse response = client.post()
+                .uri("/chat/completions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ChatRequest(model, List.of(new Message("user", prompt))))
+                .retrieve()
+                .body(ChatResponse.class);
+        if (response == null || response.choices().isEmpty()) {
+            throw new IllegalStateException("No response from OpenRouter for model " + model);
+        }
+        logger.info("Requested model {}, served by {}", model, response.model());
+        return response.choices().getFirst().message().content();
+    }
+}
+```
+
+The default model comes from `application.properties`:
+
+```properties
+# OpenRouterService: one OPENROUTER_API_KEY works with hundreds of models.
+# "openrouter/free" routes each request to a currently available free model.
+openrouter.model=openrouter/free
+```
+
+`openrouter/free` is not a model but a **router**: OpenRouter picks one of the currently available free models for each request, and the response's `model` field reports which one actually answered. That is why the service logs both the requested and the served model — run the test twice and you may see two different models reply.
+
+Points to notice:
+
+- The only OpenRouter-specific parts of the service are the base URL and the model string. Because OpenRouter speaks OpenAI's chat completions format, your hand-rolled client needs no vendor SDK — a new provider is just a new constructor argument.
+- The overloaded `chat(model, prompt)` method lets you target any specific model in the catalog. The test uses `openai/gpt-oss-20b:free` — OpenAI's open-weights model, served at no charge — but swapping in a DeepSeek, Qwen, or Gemini identifier from [openrouter.ai/models](https://openrouter.ai/models) is a one-string change.
+- Free models are rate-limited and the free pool changes over time. If the explicit-model test ever fails with an unknown-model error, pick a current `:free` model from the catalog — the code does not change.
+
+Run `OpenRouterServiceTest` and watch the log to see which model answered. (Like the TTS tests, it skips itself when no API key is set.)
+
+[Back to Table of Contents](#table-of-contents)
+
 ## HTTP Interfaces (Spring Boot 3+)
 
 Spring Boot 3.0 introduced HTTP Interfaces, a declarative way to access external RESTful web services. Instead of writing `RestClient` calls manually, you declare an interface with annotated methods, and Spring implements it for you.

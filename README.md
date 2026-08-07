@@ -15,7 +15,8 @@ Comprehensive hands-on exercises for learning Spring Boot fundamentals, from bas
 2. **Install an IDE** with Spring support (IntelliJ IDEA recommended; Community Edition is fine)
 3. **Optional — Docker Desktop**: needed only for the PostgreSQL/Testcontainers exercise; everything else uses in-memory H2
 4. **Optional — OpenAI API key**: needed for the text-to-speech bonus and the Spring AI lab. Create one at platform.openai.com *before class* (account setup and billing take a few minutes) and put it in an `OPENAI_API_KEY` environment variable. Everything builds and runs without it; the AI exercises simply skip
-5. **Network note**: several labs call public APIs (jsonplaceholder.typicode.com, api.chucknorris.io, ll.thespacedevs.com, api.openai.com). If you're on a corporate network, confirm those are reachable or expect some tests to skip/fail
+5. **Optional — OpenRouter API key**: needed for the "one key, hundreds of models" bonus. Create one at openrouter.ai (no billing required — the demo uses free models) and put it in an `OPENROUTER_API_KEY` environment variable
+6. **Network note**: several labs call public APIs (jsonplaceholder.typicode.com, api.chucknorris.io, ll.thespacedevs.com, api.openai.com, openrouter.ai). If you're on a corporate network, confirm those are reachable or expect some tests to skip/fail
 
 ## Two-Day Course Agenda
 
@@ -61,6 +62,7 @@ This repository contains five independent Spring Boot projects that demonstrate 
   - JSON Placeholder API integration (no API keys required)
   - Launch Library API for space data
   - OpenAI text-to-speech: a POST with a binary (mp3) response, streamed to a file
+  - OpenRouter chat: one API key, hundreds of models; defaults to the free-model router
   - Comprehensive error handling
 
 ### 📁 **persistence** - Database Access Patterns
@@ -195,6 +197,11 @@ cd shopping && ./gradlew test
 ### OpenAI (springai project; API key required)
 - **Chat and structured output**: `ChatClient` demos in the `springai` project
 - **Configuration**: Reads the `OPENAI_API_KEY` environment variable; builds cleanly without it
+
+### OpenRouter (restclient project; API key required)
+- **Chat completions**: hand-rolled `RestClient` + records against OpenRouter's OpenAI-compatible API — one key covers hundreds of models
+- **Free-model router**: defaults to `openrouter/free` (configurable via `openrouter.model`), which picks a currently available free model and reports which one answered
+- **Configuration**: Reads the `OPENROUTER_API_KEY` environment variable; tests skip without it
 
 ## Development Environment
 

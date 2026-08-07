@@ -14,7 +14,7 @@ This file contains common commands and patterns for working with the Spring Boot
 ```
 spring-and-spring-boot/
 ├── demo/              # Basic Spring Boot web application
-├── restclient/        # External API integration examples
+├── restclient/        # External API integration (incl. OpenAI TTS, OpenRouter chat)
 ├── persistence/       # Database access patterns
 ├── shopping/          # Enterprise shopping application (from advanced labs)
 ├── springai/          # Spring AI 2.0 demo (OpenAI ChatClient)
@@ -87,7 +87,7 @@ cd springai && ./gradlew build
 
 # Run tests for specific project
 cd demo && ./gradlew test
-cd restclient && ./gradlew test
+cd restclient && ./gradlew test # TTS test skips without OPENAI_API_KEY; OpenRouter test skips without OPENROUTER_API_KEY
 cd persistence && ./gradlew test
 cd shopping && ./gradlew test
 cd springai && ./gradlew test   # live tests skip unless OPENAI_API_KEY is set
