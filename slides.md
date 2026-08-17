@@ -1165,6 +1165,10 @@ layout: section
 
 # Spring Security: The Short Version
 
+---
+
+# One Dependency Changes Everything
+
 <v-clicks>
 
 - Add one dependency and everything changes:
@@ -1219,6 +1223,8 @@ public class SecurityConfig {
 
 </v-clicks>
 
+---
+layout: section
 ---
 
 # Testing Strategies
