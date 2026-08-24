@@ -13,9 +13,9 @@ import java.nio.file.StandardCopyOption;
 public class TextToSpeechService {
     private final RestClient client;
 
-    public TextToSpeechService(RestClient.Builder builder,
-                               @Value("${OPENAI_API_KEY:}") String apiKey) {
-        client = builder.baseUrl("https://api.openai.com")
+    public TextToSpeechService(@Value("${OPENAI_API_KEY:}") String apiKey) {
+        client = RestClient.builder()
+                .baseUrl("https://api.openai.com")
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .build();
     }

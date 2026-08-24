@@ -15,12 +15,10 @@ public class JokeService {
     private final RestClient client;
     private final WebClient webClient;
 
-    public JokeService(RestClient.Builder restClientBuilder,
-                       WebClient.Builder webClientBuilder,
-                       MyProperties properties) {
+    public JokeService(MyProperties properties) {
         String baseUrl = properties.getJokeUrl();
-        client = restClientBuilder.baseUrl(baseUrl).build();
-        webClient = webClientBuilder.baseUrl(baseUrl).build();
+        client = RestClient.builder().baseUrl(baseUrl).build();
+        webClient = WebClient.builder().baseUrl(baseUrl).build();
     }
 
     public String getJoke() {

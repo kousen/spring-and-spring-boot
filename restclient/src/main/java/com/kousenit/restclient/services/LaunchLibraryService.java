@@ -15,8 +15,8 @@ public class LaunchLibraryService {
     private static final String BASE_URL = "https://ll.thespacedevs.com";
     private final RestClient client;
 
-    public LaunchLibraryService(RestClient.Builder builder) {
-        this.client = builder.baseUrl(BASE_URL).build();
+    public LaunchLibraryService() {
+        this.client = RestClient.builder().baseUrl(BASE_URL).build();
     }
 
     public List<Expedition> getExpeditions() {

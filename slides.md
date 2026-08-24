@@ -386,9 +386,9 @@ layout: section
 // In a service or component
 private final RestClient client;
 
-public LaunchLibraryService(RestClient.Builder builder) {
-    // Use injected builder for testability
-    this.client = builder.baseUrl("https://ll.thespacedevs.com").build();
+public LaunchLibraryService() {
+    this.client = RestClient.builder()
+            .baseUrl("https://ll.thespacedevs.com").build();
 }
 
 public List<Expedition> getExpeditions() {
@@ -427,8 +427,9 @@ public interface LaunchLibraryInterface {
 2.  **Create a Factory Bean**: In a `@Configuration` class, tell Spring how to create an implementation of your interface.
 ```java
 @Bean
-public LaunchLibraryInterface launchLibraryInterface(RestClient.Builder builder) {
-    RestClient client = builder.baseUrl("https://ll.thespacedevs.com").build();
+public LaunchLibraryInterface launchLibraryInterface() {
+    RestClient client = RestClient.builder()
+            .baseUrl("https://ll.thespacedevs.com").build();
     RestClientAdapter adapter = RestClientAdapter.create(client);
     HttpServiceProxyFactory factory = HttpServiceProxyFactory
             .builderFor(adapter).build();

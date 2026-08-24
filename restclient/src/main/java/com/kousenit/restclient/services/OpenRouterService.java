@@ -28,10 +28,10 @@ public class OpenRouterService {
     private final RestClient client;
     private final String defaultModel;
 
-    public OpenRouterService(RestClient.Builder builder,
-                             @Value("${OPENROUTER_API_KEY:}") String apiKey,
+    public OpenRouterService(@Value("${OPENROUTER_API_KEY:}") String apiKey,
                              @Value("${openrouter.model:openrouter/free}") String defaultModel) {
-        client = builder.baseUrl("https://openrouter.ai/api/v1")
+        client = RestClient.builder()
+                .baseUrl("https://openrouter.ai/api/v1")
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .build();
         this.defaultModel = defaultModel;

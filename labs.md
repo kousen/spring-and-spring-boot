@@ -508,8 +508,8 @@ public class LaunchLibraryService {
     private static final String BASE_URL = "https://ll.thespacedevs.com";
     private final RestClient client;
 
-    public LaunchLibraryService(RestClient.Builder builder) {
-        this.client = builder.baseUrl(BASE_URL).build();
+    public LaunchLibraryService() {
+        this.client = RestClient.builder().baseUrl(BASE_URL).build();
     }
 
     public List<Expedition> getExpeditions() {
@@ -523,7 +523,7 @@ public class LaunchLibraryService {
 ```
 
 > [!IMPORTANT]
-> Notice we inject `RestClient.Builder` rather than creating the `RestClient` directly. Spring Boot auto-configures a `RestClient.Builder` bean that includes any application-wide settings (timeouts, interceptors, etc.). This is the recommended approach for production code.
+> The static `RestClient.builder()` method starts a fluent builder where you set the base URL (and, as you'll see later, default headers) before calling `build()`. The resulting `RestClient` is immutable and thread-safe, so one instance per service is all you need.
 
 ### Step 5: Add Business Methods
 
@@ -636,9 +636,9 @@ So far every call has been a GET returning JSON. The `TextToSpeechService` in th
 public class TextToSpeechService {
     private final RestClient client;
 
-    public TextToSpeechService(RestClient.Builder builder,
-                               @Value("${OPENAI_API_KEY:}") String apiKey) {
-        client = builder.baseUrl("https://api.openai.com")
+    public TextToSpeechService(@Value("${OPENAI_API_KEY:}") String apiKey) {
+        client = RestClient.builder()
+                .baseUrl("https://api.openai.com")
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .build();
     }
@@ -725,10 +725,10 @@ public class OpenRouterService {
     private final RestClient client;
     private final String defaultModel;
 
-    public OpenRouterService(RestClient.Builder builder,
-                             @Value("${OPENROUTER_API_KEY:}") String apiKey,
+    public OpenRouterService(@Value("${OPENROUTER_API_KEY:}") String apiKey,
                              @Value("${openrouter.model:openrouter/free}") String defaultModel) {
-        client = builder.baseUrl("https://openrouter.ai/api/v1")
+        client = RestClient.builder()
+                .baseUrl("https://openrouter.ai/api/v1")
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .build();
         this.defaultModel = defaultModel;
@@ -809,8 +809,8 @@ public interface LaunchLibraryInterface {
 
 ```java
 @Bean
-public LaunchLibraryInterface launchLibraryInterface(RestClient.Builder builder) {
-    RestClient client = builder
+public LaunchLibraryInterface launchLibraryInterface() {
+    RestClient client = RestClient.builder()
             .baseUrl("https://ll.thespacedevs.com")
             .build();
     RestClientAdapter adapter = RestClientAdapter.create(client);
@@ -2887,7 +2887,7 @@ dependencies {
 }
 ```
 
-The Spring AI BOM manages the versions of all Spring AI artifacts, and the OpenAI starter auto-configures everything needed to talk to the OpenAI API — including a `ChatClient.Builder` you can inject, exactly the way `RestClient.Builder` worked in the REST client labs.
+The Spring AI BOM manages the versions of all Spring AI artifacts, and the OpenAI starter auto-configures everything needed to talk to the OpenAI API — including a `ChatClient.Builder` bean you can inject into your services.
 
 ### Step 2: The ChatClient Service
 
