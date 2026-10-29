@@ -26,6 +26,11 @@ Comprehensive hands-on exercises for learning Spring Boot fundamentals, from bas
 
 > Bean Validation, global exception handling, and Spring Security are covered in the slides; hands-on practice for the first two lives in the advanced labs, and security is deliberately pointers-only — it deserves its own course.
 
+## Slides
+
+- **Web version** (GitHub Pages): **<https://kousen.github.io/spring-and-spring-boot/>**, deployed on every slide change by [`deploy-slides-pages.yml`](.github/workflows/deploy-slides-pages.yml)
+- **PDF**: [`spring-and-spring-boot-slides.pdf`](https://github.com/kousen/spring-and-spring-boot/releases/latest/download/spring-and-spring-boot-slides.pdf) from the rolling `slides-latest` release, built by [`build-slides-pdf.yml`](.github/workflows/build-slides-pdf.yml)
+
 ## Lab Materials
 
 ### 📚 **labs.md** - Comprehensive Basic Labs
